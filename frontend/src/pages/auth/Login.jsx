@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import Colors from "../../styles/Colors";
 import Spinner from "../../components/common/Spinner";
 import Header from "../../components/common/Header/Header";
 
 const Login = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -53,8 +54,9 @@ const Login = () => {
         localStorage.removeItem('rememberedEmail');
       }
 
-      console.log("Login successful!");
-      // Redirect or handle login success here
+      // After successful login, navigate to home page
+      navigate('/');
+      
     } catch (error) {
       console.error("Login failed!", error);
     } finally {
@@ -62,20 +64,46 @@ const Login = () => {
     }
   };
 
+  // For testing purposes - temporary navigation button
+  const goToHome = () => {
+    navigate('/');
+  };
+
   return (
     <>
       {isLoading && <Spinner />}
       {/* <Header/> */}
-      <section className="h-screen bg-gradient-to-b from-gray-50 to-white relative overflow-hidden flex items-center">
+      <section className="min-h-screen bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
+        {/* Brand Logo */}
+        <div className="absolute top-8 left-8 lg:left-24 z-10">
+          <Link 
+            to="/"
+            className="text-2xl font-bold text-[#F3703A] hover:text-[#E65A2A] transition-colors duration-300 cursor-pointer"
+          >
+            EZI Property
+          </Link>
+        </div>
+
+        {/* Go to Home Button */}
+        <div className="absolute top-8 right-8 lg:right-24 z-10">
+          <Link 
+            to="/"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur-sm border-2 border-[#F3703A] text-[#F3703A] rounded-xl hover:bg-[#F3703A] hover:text-white transition-all duration-300 cursor-pointer group shadow-sm hover:shadow-lg"
+          >
+            <ArrowRight className="w-4 h-4 rotate-180 transition-transform group-hover:-translate-x-1" />
+            <span className="font-medium">Home</span>
+          </Link>
+        </div>
+
         {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-30">
+        <div className="absolute inset-0 opacity-30 z-0">
           <div className="absolute inset-0" style={{
             backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(0,0,0,0.05) 1px, transparent 0)',
             backgroundSize: '40px 40px'
           }} />
         </div>
 
-        <div className="max-w-[1440px] mx-auto px-8 lg:px-24 w-full">
+        <div className="max-w-[1440px] mx-auto px-8 lg:px-24 w-full relative z-10 py-12">
           <div className="flex flex-col items-center">
             {/* Header Section */}
             <motion.div
