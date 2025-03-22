@@ -1,10 +1,12 @@
 import React from 'react';
+import { BrowserRouter as Router } from 'react-router-dom';
+import LayoutRoutes from './routes/LayoutRoutes';
 
 function App() {
   return (
-    <div className="bg-white">
-      <p>working</p>
-    </div>
+    <Router>
+      <LayoutRoutes />
+    </Router>
   );
 }
 
