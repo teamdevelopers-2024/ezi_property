@@ -5,12 +5,12 @@ import SearchBar from '../../components/buyer/SearchBar';
 import PropertyTypes from '../../components/buyer/PropertyTypes';
 import WhyChooseUsSection from '../../components/buyer/WhyChooseUsSection';
 import PropertyListing from '../../components/buyer/PropertyListing';
-import Footer from '../../components/common/Footer';
+import Footer from '../../components/common/Footer/Footer';
 import BackToTop from '../../components/common/BackToTop';
 
 const Home = () => {
   return (
-    <div className="container-xxl p-0">
+    <div className="container-xxl p-0"> 
       <Header/>
       <HeroSection/>
       <SearchBar/>

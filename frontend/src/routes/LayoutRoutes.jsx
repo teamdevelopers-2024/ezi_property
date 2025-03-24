@@ -1,26 +1,40 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import ErrorBoundary from "../components/ErrorBoundary";
+import { useAuth } from "../contexts/AuthContext";
 
-// Example imports (adjust paths to match your project):
-import Home from "../pages/buyer/Home";
-import About from "../pages/misc/About";
+// Auth Pages
+import Login from "../pages/auth/Login";
+import Register from "../pages/auth/Register";
+import ForgotPassword from "../pages/auth/ForgotPassword";
+
+// Admin Pages
 import AdminDashboard from "../pages/admin/Dashboard";
+import Reports from "../pages/admin/Reports";
+
+// Seller Pages
 import SellerDashboard from "../pages/seller/Dashboard";
-import NotFound from "../pages/misc/NotFound"; // 404 fallback page
-import LoginPage from "../pages/auth/Login";
+
+// Buyer Pages
+import Home from "../pages/buyer/Home";
+
+// Misc Pages
+import NotFound from "../pages/misc/NotFound";
+import About from "../pages/misc/About";
 
 // Protected Route Component
-const ProtectedRoute = ({ children, allowedRoles }) => {
-  // Replace this with your actual auth logic
-  const isAuthenticated = localStorage.getItem("token");
-  const userRole = localStorage.getItem("userRole");
+const ProtectedRoute = ({ children, roles }) => {
+  const { user, loading } = useAuth();
 
-  if (!isAuthenticated) {
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(userRole)) {
+  if (roles && !roles.includes(user.role)) {
     return <Navigate to="/" replace />;
   }
 
@@ -34,30 +48,41 @@ function LayoutRoutes() {
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* Protected Admin Routes */}
+        {/* Admin Routes */}
         <Route
-          path="/admin/*"
+          path="/admin/dashboard"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute roles={["admin"]}>
               <AdminDashboard />
             </ProtectedRoute>
           }
         />
-
-        {/* Protected Seller Routes */}
         <Route
-          path="/seller/*"
+          path="/admin/reports"
           element={
-            <ProtectedRoute allowedRoles={["seller"]}>
+            <ProtectedRoute roles={["admin"]}>
+              <Reports />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Seller Routes */}
+        <Route
+          path="/seller/dashboard"
+          element={
+            <ProtectedRoute roles={["seller"]}>
               <SellerDashboard />
             </ProtectedRoute>
           }
         />
 
-        {/* Catch-all for unknown routes (404) */}
-        <Route path="*" element={<NotFound />} />
+        {/* 404 Route */}
+        <Route path="/404" element={<NotFound />} />
+        <Route path="*" element={<Navigate to="/404" replace />} />
       </Routes>
     </ErrorBoundary>
   );

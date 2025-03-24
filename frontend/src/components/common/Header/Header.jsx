@@ -42,26 +42,26 @@ const Header = () => {
 
   return (
     <>
-      <div
-        className={`
-          z-50
-          fixed 
-          left-1/2 
-          transform -translate-x-1/2
-          transition-all duration-500 ease-in-out
+    <div
+      className={`
+        z-50
+        fixed 
+        left-1/2 
+        transform -translate-x-1/2
+        transition-all duration-500 ease-in-out
           ${isSticky ? 'top-0 w-full' : 'top-6 w-[90%] max-w-[1440px]'}
-        `}
-      >
+      `}
+    >
         <motion.nav
           initial={false}
           animate={isSticky ? { y: 0 } : { y: 0 }}
-          className={`
-            flex justify-between items-center
+        className={`
+          flex justify-between items-center
             px-6 lg:px-24
             py-4
-            mx-auto
+          mx-auto
             bg-white/80 backdrop-blur-md
-            transition-all duration-500 ease-in-out
+          transition-all duration-500 ease-in-out
             ${isSticky 
               ? 'rounded-none shadow-md w-full' 
               : 'rounded-2xl shadow-lg w-full'
@@ -74,25 +74,25 @@ const Header = () => {
             flex justify-between items-center
             ${isSticky ? '' : 'max-w-[1440px]'}
           `}>
-            {/* Logo */}
+        {/* Logo */}
             <a href="#" className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-all duration-300">
               <div className="p-2 rounded-xl transform hover:scale-105 transition-all duration-300" style={{ backgroundColor: `${Colors.secondary}15` }}>
-                <img
-                  src="/img/icon-deal.png"
-                  alt="Icon"
-                  className="h-8 w-8 object-contain"
-                />
-              </div>
-              <h1 className="text-2xl font-bold" style={{ color: Colors.secondary }}>
-                EZI
-              </h1>
-            </a>
+            <img
+              src="/img/icon-deal.png"
+              alt="Icon"
+              className="h-8 w-8 object-contain"
+            />
+          </div>
+          <h1 className="text-2xl font-bold" style={{ color: Colors.secondary }}>
+            EZI
+          </h1>
+        </a>
 
             {/* Desktop Menu */}
             <div className="hidden lg:flex items-center gap-8">
               {menuItems.map((item) => (
                 <div key={item.name} className="relative group">
-                  <button
+              <button
                     className="flex items-center gap-1 text-gray-600 hover:text-[#F3703A] transition-all duration-300 cursor-pointer transform hover:scale-105"
                     style={{ 
                       color: Colors.primary,
@@ -108,9 +108,9 @@ const Header = () => {
                   {item.submenu && (
                     <div className="absolute hidden group-hover:block top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-lg p-2">
                       {item.submenu.map((subItem) => (
-                        <a
-                          key={subItem}
-                          href="#"
+                  <a
+                    key={subItem}
+                    href="#"
                           className="block px-4 py-2 text-gray-600 hover:text-[#F3703A] hover:bg-[#F3703A]/5 rounded-lg transition-all duration-300 cursor-pointer transform hover:translate-x-1"
                           style={{ 
                             color: Colors.primary,
@@ -119,26 +119,26 @@ const Header = () => {
                               backgroundColor: `${Colors.secondary}10`
                             }
                           }}
-                        >
-                          {subItem}
-                        </a>
-                      ))}
-                    </div>
+                  >
+                    {subItem}
+                  </a>
+                ))}
+              </div>
                   )}
-                </div>
+            </div>
               ))}
 
-              {/* Seller Login Button */}
-              <button
+          {/* Seller Login Button */}
+          <button
                 onClick={() => navigate("/login")}
                 className="px-6 py-2.5 text-white rounded-xl transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer transform hover:scale-105 hover:-translate-y-0.5"
-                style={{
-                  backgroundColor: Colors.secondary,
+            style={{
+              backgroundColor: Colors.secondary,
                   ':hover': { backgroundColor: Colors.primary }
-                }}
-              >
-                Seller Login
-              </button>
+            }}
+          >
+            Seller Login
+          </button>
             </div>
 
             {/* Mobile Menu Button */}
@@ -235,10 +235,10 @@ const Header = () => {
                     `}
                   >
                     Seller Login
-                  </button>
-                </div>
-              </div>
-            </div>
+            </button>
+          </div>
+        </div>
+    </div>
           </motion.div>
         )}
       </AnimatePresence>

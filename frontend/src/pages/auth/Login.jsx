@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
+
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Building2, Shield, Users, TrendingUp } from 'lucide-react';
 import Colors from "../../styles/Colors";
 import Spinner from "../../components/common/Spinner";
-import Header from "../../components/common/Header/Header";
+import { useAuth } from '../../contexts/AuthContext';
+import { getErrorMessage, validateEmail } from '../../utils/errorHandler';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -15,6 +18,8 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState('');
 
   // Check for remembered credentials on component mount
   useEffect(() => {
@@ -28,11 +33,33 @@ const Login = () => {
     }
   }, []);
 
+  const validateField = (name, value) => {
+    switch (name) {
+      case 'email':
+        return validateEmail(value);
+      case 'password':
+        return value.length < 1 ? 'Password is required' : null;
+      default:
+        return null;
+    }
+  };
+
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // Clear submit error when user starts typing
+    if (submitError) setSubmitError('');
+
+    // Validate field
+    const error = validateField(name, value);
+    setErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
   };
 
   const toggleRememberMe = () => {
@@ -42,11 +69,25 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setSubmitError('');
+
+    // Validate all fields
+    const newErrors = {};
+    Object.keys(formData).forEach(field => {
+      const error = validateField(field, formData[field]);
+      if (error) newErrors[field] = error;
+    });
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setIsLoading(false);
+      setSubmitError('Please fix the errors before submitting.');
+      return;
+    }
 
     try {
-      // Simulate API request delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
+      const user = await login(formData.email, formData.password);
+      
       // Handle remember me functionality
       if (rememberMe) {
         localStorage.setItem('rememberedEmail', formData.email);
@@ -54,122 +95,174 @@ const Login = () => {
         localStorage.removeItem('rememberedEmail');
       }
 
-      // After successful login, navigate to home page
-      navigate('/');
-      
-    } catch (error) {
-      console.error("Login failed!", error);
+      // Redirect based on user role
+      navigate(user.role === 'admin' ? '/admin/dashboard' : '/seller/dashboard');
+    } catch (err) {
+      setSubmitError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
   };
 
-  // For testing purposes - temporary navigation button
-  const goToHome = () => {
-    navigate('/');
+  const renderFieldError = (fieldName) => {
+    return errors[fieldName] && (
+      <p className="mt-1 text-sm text-red-600">
+        {errors[fieldName]}
+      </p>
+    );
   };
 
   return (
     <>
       {isLoading && <Spinner />}
-      {/* <Header/> */}
-      <section className="min-h-screen bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
-        {/* Brand Logo */}
-        <div className="absolute top-8 left-8 lg:left-24 z-10">
-          <Link 
-            to="/"
-            className="text-2xl font-bold text-[#F3703A] hover:text-[#E65A2A] transition-colors duration-300 cursor-pointer"
-          >
-            EZI Property
-          </Link>
-        </div>
+      <div className="min-h-screen flex">
+        {/* Left Side - Content */}
+        <div className="hidden lg:flex lg:w-1/2 bg-white p-12 flex-col justify-between relative overflow-hidden">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)',
+              backgroundSize: '40px 40px'
+            }} />
+          </div>
 
-        {/* Go to Home Button */}
-        <div className="absolute top-8 right-8 lg:right-24 z-10">
-          <Link 
-            to="/"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur-sm border-2 border-[#F3703A] text-[#F3703A] rounded-xl hover:bg-[#F3703A] hover:text-white transition-all duration-300 cursor-pointer group shadow-sm hover:shadow-lg"
-          >
-            <ArrowRight className="w-4 h-4 rotate-180 transition-transform group-hover:-translate-x-1" />
-            <span className="font-medium">Home</span>
-          </Link>
-        </div>
+          {/* Brand Logo */}
+          <div className="relative z-10">
+            <Link 
+              to="/"
+              className="text-2xl font-bold text-[#F3703A] hover:text-gray-100 transition-colors duration-300 cursor-pointer"
+            >
+              EZI Property
+            </Link>
+          </div>
 
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-30 z-0">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(0,0,0,0.05) 1px, transparent 0)',
-            backgroundSize: '40px 40px'
-          }} />
-        </div>
-
-        <div className="max-w-[1440px] mx-auto px-8 lg:px-24 w-full relative z-10 py-12">
-          <div className="flex flex-col items-center">
-            {/* Header Section */}
+          {/* Content */}
+          <div className="relative z-10 max-w-lg">
             <motion.div
-              className="text-center max-w-2xl mb-12"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
+              className="text-gray-900"
             >
-              {/* Section Label */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="inline-flex items-center gap-2 bg-[#F3703A]/5 px-4 py-2 rounded-full mb-6"
-              >
-                <span className="w-2 h-2 bg-[#F3703A] rounded-full animate-pulse" />
-                <span className="text-[#F3703A] text-sm font-medium tracking-wider uppercase">Welcome Back</span>
-              </motion.div>
-
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-                Login to Your <span className="text-[#F3703A]">Account</span>
+              <h1 className="text-4xl font-bold mb-6">
+                Welcome Back
               </h1>
-              <p className="text-gray-600 text-lg">
-                Access your account to manage your properties and preferences.
+              <p className="text-lg text-gray-600 mb-8">
+                Your trusted platform for property management and real estate transactions.
               </p>
-            </motion.div>
 
-            {/* Login Form */}
+              {/* Features */}
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-white/10 backdrop-blur-sm rounded-lg">
+                    <Building2 className="w-6 h-6 text-[#F3703A]" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-1">Property Management</h3>
+                    <p className="text-gray-700">Easily manage your properties and listings</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-white/10 backdrop-blur-sm rounded-lg">
+                    <Shield className="w-6 h-6 text-[#F3703A]" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-1">Secure Platform</h3>
+                    <p className="text-gray-700">Your data is protected with industry-standard security</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-white/10 backdrop-blur-sm rounded-lg">
+                    <Users className="w-6 h-6 text-[#F3703A]" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-1">Community</h3>
+                    <p className="text-gray-700">Join our growing community of property owners</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-white/10 backdrop-blur-sm rounded-lg">
+                    <TrendingUp className="w-6 h-6 text-[#F3703A]" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-1">Market Insights</h3>
+                    <p className="text-gray-700">Access real-time market data and analytics</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Footer */}
+          <div className="relative z-10 text-gray-600 text-sm">
+            © 2024 EZI Property. All rights reserved.
+          </div>
+        </div>
+
+        {/* Right Side - Login Form */}
+        <div className="w-full lg:w-1/2 bg-white flex items-center justify-center p-4 sm:p-6 md:p-8">
+          <div className="w-full max-w-md">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="w-full max-w-md"
             >
-              <div className="bg-white p-8 rounded-2xl shadow-lg">
-                <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl shadow-lg">
+                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+                  {submitError && (
+                    <div className="bg-red-50 border border-red-200 text-red-600 px-3 sm:px-4 py-2 sm:py-3 rounded-xl text-sm">
+                      {submitError}
+                    </div>
+                  )}
+
                   {/* Email Field */}
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                       Email Address
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Mail className="h-5 w-5 text-gray-400" />
+                        <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-[#F3703A]" />
                       </div>
                       <input
-                        type="email"
+                        type="text"
                         id="email"
                         name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-[#F3703A] focus:border-[#F3703A] transition-colors duration-300 text-gray-900 cursor-text"
+                        value={formData.email.split('@')[0]}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const sanitizedValue = value.replace(/[@\s]/g, '');
+                          handleChange({
+                            target: {
+                              name: 'email',
+                              value: sanitizedValue + '@gmail.com'
+                            }
+                          });
+                        }}
+                        className={`block w-full pl-9 sm:pl-10 pr-[105px] py-2 sm:py-3 text-sm sm:text-base border ${
+                          errors.email ? 'border-red-300' : 'border-gray-300'
+                        } rounded-xl focus:ring-2 focus:ring-[#F3703A]/20 focus:border-[#F3703A] focus:outline-none transition-all duration-300 text-gray-900 cursor-text`}
                         placeholder="Enter your email"
                         required
                       />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 text-sm sm:text-base">@gmail.com</span>
+                      </div>
                     </div>
+                    {renderFieldError('email')}
                   </div>
 
                   {/* Password Field */}
                   <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                       Password
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Lock className="h-5 w-5 text-gray-400" />
+                        <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-[#F3703A]" />
                       </div>
                       <input
                         type={showPassword ? "text" : "password"}
@@ -177,26 +270,29 @@ const Login = () => {
                         name="password"
                         value={formData.password}
                         onChange={handleChange}
-                        className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-[#F3703A] focus:border-[#F3703A] transition-colors duration-300 text-gray-900 cursor-text"
+                        className={`block w-full pl-9 sm:pl-10 pr-12 py-2 sm:py-3 text-sm sm:text-base border ${
+                          errors.password ? 'border-red-300' : 'border-gray-300'
+                        } rounded-xl focus:ring-2 focus:ring-[#F3703A]/20 focus:border-[#F3703A] focus:outline-none transition-all duration-300 text-gray-900 cursor-text`}
                         placeholder="Enter your password"
                         required
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-300 cursor-pointer"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-[#F3703A] active:text-[#F3703A] transition-colors duration-300 cursor-pointer"
                       >
                         {showPassword ? (
-                          <EyeOff className="h-5 w-5" />
+                          <Eye className="h-4 w-4 sm:h-5 sm:w-5 hover:text-[#F3703A] transition-colors duration-300" />
                         ) : (
-                          <Eye className="h-5 w-5" />
+                          <EyeOff className="h-4 w-4 sm:h-5 sm:w-5 hover:text-[#F3703A] transition-colors duration-300" />
                         )}
                       </button>
                     </div>
+                    {renderFieldError('password')}
                   </div>
 
                   {/* Forgot Password & Remember Me */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                     <div 
                       className="flex items-center gap-2" 
                       onClick={toggleRememberMe}
@@ -233,7 +329,7 @@ const Login = () => {
                     </div>
                     <Link 
                       to="/forgot-password" 
-                      className="text-sm  font-medium text-[#F3703A] hover:text-[#E65A2A] transition-colors duration-300 "
+                      className="text-sm font-medium text-[#F3703A] hover:text-[#E65A2A] transition-colors duration-300 cursor-pointer hover:underline"
                     >
                       Forgot password?
                     </Link>
@@ -242,18 +338,18 @@ const Login = () => {
                   {/* Login Button */}
                   <button
                     type="submit"
-                    className="group w-full inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#F3703A] hover:bg-[#E65A2A] text-white font-medium rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl cursor-pointer hover:scale-[1.02] active:scale-[0.98] transform"
+                    className="group w-full inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-[#F3703A] hover:bg-[#E65A2A] text-white text-sm sm:text-base font-medium rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl cursor-pointer hover:scale-[1.02] active:scale-[0.98] transform"
                   >
                     <span>Login to Account</span>
-                    <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+                    <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:translate-x-1" />
                   </button>
 
                   {/* Sign Up Link */}
                   <p className="text-center text-sm text-gray-600">
                     Don't have an account?{' '}
                     <Link 
-                      to="/signup" 
-                      className="font-medium text-[#F3703A] hover:text-[#E65A2A] transition-colors duration-300 cursor-pointer"
+                      to="/register" 
+                      className="font-medium text-[#F3703A] hover:text-[#E65A2A] transition-colors duration-300 cursor-pointer hover:underline"
                     >
                       Sign up now
                     </Link>
@@ -263,7 +359,7 @@ const Login = () => {
             </motion.div>
           </div>
         </div>
-      </section>
+      </div>
     </>
   );
 };

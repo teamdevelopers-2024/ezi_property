@@ -71,7 +71,7 @@ const NotFound = () => {
           
           <button
             onClick={() => window.history.back()}
-            className="flex items-center gap-2 px-6 py-3 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-300 border border-gray-200 shadow-lg hover:shadow-xl"
+            className="flex items-center gap-2 px-6 py-3 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-300 border border-gray-200 shadow-lg hover:shadow-xl cursor-pointer"
           >
             <ArrowLeft size={20} />
             <span>Go Back</span>
