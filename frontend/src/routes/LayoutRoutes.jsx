@@ -22,6 +22,9 @@ import Home from "../pages/buyer/Home";
 import NotFound from "../pages/misc/NotFound";
 import About from "../pages/misc/About";
 
+// Onboarding Page
+import Onboarding from "../pages/Onboarding";
+
 // Protected Route Component
 const ProtectedRoute = ({ children, roles }) => {
   const { user, loading } = useAuth();
@@ -46,7 +49,8 @@ function LayoutRoutes() {
     <ErrorBoundary>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Onboarding />} />
+        <Route path="/home" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
