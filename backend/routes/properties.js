@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import Property from '../models/Property.js';
+import { auth, checkRole } from '../middleware/auth.js';
+
 const router = express.Router();
-const Property = require('../models/Property');
-const { auth, checkRole } = require('../middleware/auth');
 
 // Get all properties (public)
 router.get('/', async (req, res) => {
@@ -121,4 +122,4 @@ router.patch('/:id/verify', auth, checkRole(['admin']), async (req, res) => {
   }
 });
 
-module.exports = router; 
+export default router; 

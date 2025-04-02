@@ -1,13 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Shield } from 'lucide-react';
 import Spinner from "../../components/common/Spinner";
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { getErrorMessage, validateEmail } from '../../utils/errorHandler';
 
-const Login = () => {
+const AdminLogin = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { showToast } = useToast();
@@ -20,6 +20,14 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
+
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    if (rememberedEmail) {
+      setFormData(prev => ({ ...prev, email: rememberedEmail }));
+      setRememberMe(true);
+    }
+  }, []);
 
   const validateField = (name, value) => {
     switch (name) {
@@ -81,7 +89,7 @@ const Login = () => {
     }
 
     try {
-      const user = await login(formData.email, formData.password, 'seller');
+      const user = await login(formData.email, formData.password, 'admin');
       
       // Handle remember me functionality
       if (rememberMe) {
@@ -91,7 +99,7 @@ const Login = () => {
       }
 
       showToast('Login successful! Welcome back.', 'success');
-      navigate('/seller/dashboard');
+      navigate('/admin/dashboard');
     } catch (err) {
       const errorMessage = getErrorMessage(err);
       setSubmitError(errorMessage);
@@ -142,15 +150,27 @@ const Login = () => {
             >
               <div className="inline-flex items-center gap-2 bg-[#F3703A]/5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-4 sm:mb-6">
                 <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-[#F3703A] rounded-full animate-pulse" />
-                <span className="text-[#F3703A] text-xs sm:text-sm font-medium tracking-wider uppercase">Seller Portal</span>
+                <span className="text-[#F3703A] text-xs sm:text-sm font-medium tracking-wider uppercase">Admin Portal</span>
               </div>
 
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
-                Welcome to <span className="text-[#F3703A]">Seller Dashboard</span>
+                Welcome to <span className="text-[#F3703A]">Admin Dashboard</span>
               </h1>
               <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
-                Access your property listings, manage inquiries, and grow your business with our comprehensive seller tools.
+                Access the admin portal to manage properties, users, and system settings.
               </p>
+
+              <div className="space-y-4 sm:space-y-6">
+                <div className="flex items-center gap-3 sm:gap-4 text-gray-600">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#F3703A]/10 flex items-center justify-center">
+                    <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-[#F3703A]" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Secure Access</h3>
+                    <p className="text-sm text-gray-600">Protected admin portal with enhanced security</p>
+                  </div>
+                </div>
+              </div>
             </motion.div>
 
             {/* Right Side - Login Form */}
@@ -161,7 +181,7 @@ const Login = () => {
               transition={{ duration: 0.6 }}
             >
               <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Seller Login</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Admin Login</h2>
                 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Email Field */}
@@ -235,7 +255,7 @@ const Login = () => {
                     </div>
                     <Link
                       to="/forgot-password"
-                      className="text-sm font-medium text-[#F3703A] hover:text-[#E65A2A] cursor-pointer hover:underline relative "
+                      className="text-sm font-medium text-[#F3703A] hover:text-[#E65A2A]"
                     >
                       Forgot password?
                     </Link>
@@ -245,7 +265,7 @@ const Login = () => {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-[#F3703A] text-white py-2 px-4 rounded-lg hover:bg-[#E65A2A] transition-colors duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer relative"
+                    className="w-full bg-[#F3703A] text-white py-2 px-4 rounded-lg hover:bg-[#E65A2A] transition-colors duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? (
                       <>
@@ -267,19 +287,6 @@ const Login = () => {
                     </p>
                   )}
                 </form>
-
-                {/* Registration Link */}
-                <div className="mt-6 text-center">
-                  <p className="text-sm text-gray-600">
-                    Don't have an account?{' '}
-                    <Link
-                      to="/register"
-                      className="font-medium text-[#F3703A] hover:text-[#E65A2A] cursor-pointer relative hover:underline"
-                    >
-                      Register here
-                    </Link>
-                  </p>
-                </div>
               </div>
             </motion.div>
           </div>
@@ -289,4 +296,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default AdminLogin; 

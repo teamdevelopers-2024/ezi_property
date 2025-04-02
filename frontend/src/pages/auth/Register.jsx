@@ -4,11 +4,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Phone, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import Spinner from "../../components/common/Spinner";
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import { getErrorMessage, validatePassword, validateEmail, validatePhone, validateName } from '../../utils/errorHandler';
 
 const Register = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const { showToast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -127,14 +129,18 @@ const Register = () => {
       setErrors(newErrors);
       setIsLoading(false);
       setSubmitError('Please fix the errors before submitting.');
+      showToast('Please fix the form errors before submitting.', 'error');
       return;
     }
 
     try {
       await register(formData);
+      showToast('Registration successful! Please log in to continue.', 'success');
       navigate('/login');
     } catch (err) {
-      setSubmitError(getErrorMessage(err));
+      const errorMessage = getErrorMessage(err);
+      setSubmitError(errorMessage);
+      showToast(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }

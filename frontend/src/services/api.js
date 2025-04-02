@@ -3,7 +3,7 @@ import { getErrorMessage } from '../utils/errorHandler';
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },

@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth } from '../services/api';
-import { getErrorMessage } from '../utils/errorHandler';
+import api from '../services/api';
+import { useToast } from './ToastContext';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -14,76 +14,88 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { showToast } = useToast();
 
   useEffect(() => {
-    checkAuth();
+    const token = localStorage.getItem('token');
+    if (token) {
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      checkAuthStatus();
+    } else {
+      setIsLoading(false);
+    }
   }, []);
 
-  const checkAuth = async () => {
+  const checkAuthStatus = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (token) {
-        const userData = await auth.getCurrentUser();
-        setUser(userData);
-        setError(null);
-      }
+      const response = await api.get('/auth/me');
+      setUser(response.data);
     } catch (error) {
-      console.error('Auth check failed:', error);
-      setError(error.message || 'Failed to verify authentication');
-      auth.logout();
+      localStorage.removeItem('token');
+      delete api.defaults.headers.common['Authorization'];
+      setUser(null);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (email, password, role) => {
     try {
-      setError(null);
-      const { user: userData, token } = await auth.login(email, password);
+      const response = await api.post('/auth/login', { email, password, role });
+      const { token, user } = response.data;
+      
+      // Verify that the user has the correct role
+      if (user.role !== role) {
+        throw new Error(`Access denied. This login is for ${role}s only.`);
+      }
+      
       localStorage.setItem('token', token);
-      setUser(userData);
-      return userData;
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      setUser(user);
+      
+      return user;
     } catch (error) {
-      setError(error.message || 'Login failed. Please try again.');
       throw error;
     }
   };
 
   const register = async (userData) => {
     try {
-      setError(null);
-      const { user: newUser, token } = await auth.register(userData);
+      const response = await api.post('/auth/register', { ...userData, role: 'seller' });
+      const { token, user } = response.data;
+      
       localStorage.setItem('token', token);
-      setUser(newUser);
-      return newUser;
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      setUser(user);
+      
+      return user;
     } catch (error) {
-      setError(error.message || 'Registration failed. Please try again.');
       throw error;
     }
   };
 
   const logout = () => {
-    auth.logout();
+    localStorage.removeItem('token');
+    delete api.defaults.headers.common['Authorization'];
     setUser(null);
-    setError(null);
+    showToast('Logged out successfully', 'success');
   };
 
   const value = {
     user,
-    loading,
-    error,
+    isLoading,
     login,
     register,
     logout,
+    checkAuthStatus
   };
 
-  if (loading) {
-    return <div>Loading...</div>; // You can replace this with a proper loading component
-  }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export default AuthContext; 
