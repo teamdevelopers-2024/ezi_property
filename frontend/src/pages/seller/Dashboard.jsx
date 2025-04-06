@@ -35,7 +35,7 @@ const SellerDashboard = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/seller/login');
   };
 
   const formatPrice = (price) => {

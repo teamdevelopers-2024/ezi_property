@@ -126,7 +126,7 @@ const Header = () => {
 
           {/* Seller Login Button */}
           <button
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/seller/login")}
                 className="px-6 py-2.5 text-white rounded-xl transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer transform hover:scale-105 hover:-translate-y-0.5"
             style={{
               backgroundColor: Colors.secondary,
@@ -219,7 +219,7 @@ const Header = () => {
                 ))}
                 <div className="px-4 pt-4">
                   <button
-                    onClick={() => navigate("/login")}
+                    onClick={() => navigate("/seller/login")}
                     className={`
                       w-full px-6 py-3 text-white rounded-xl
                       bg-[#F3703A] hover:bg-[#E65A2A]

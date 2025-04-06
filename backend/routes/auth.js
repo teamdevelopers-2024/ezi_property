@@ -133,7 +133,7 @@ router.post('/register', async (req, res) => {
 });
 
 // Login route (for sellers only)
-router.post('/login', async (req, res) => {
+router.post('/seller/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -141,6 +141,11 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Verify user is a seller
+    if (user.role !== 'seller') {
+      return res.status(403).json({ message: 'Access denied. Seller account required.' });
     }
 
     // Check password

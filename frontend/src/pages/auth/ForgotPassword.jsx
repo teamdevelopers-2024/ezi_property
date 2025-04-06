@@ -81,7 +81,7 @@ const ForgotPassword = () => {
                       Password reset instructions have been sent to your email.
                     </div>
                     <Link
-                      to="/login"
+                      to="/seller/login"
                       className="relative cursor-pointer inline-flex items-center gap-2 text-[#F3703A] hover:text-[#E65A2A] transition-colors duration-300"
                     >
                       Back to Login
@@ -129,9 +129,9 @@ const ForgotPassword = () => {
                     {/* Back to Login Link */}
                     <p className="text-center text-sm text-gray-600">
                       Remember your password?{' '}
-                      <Link 
-                        to="/login" 
-                        className="relative hover:underline font-medium text-[#F3703A] hover:text-[#E65A2A] transition-colors duration-300 cursor-pointer"
+                      <Link
+                        to="/seller/login"
+                        className="font-medium text-[#F3703A] hover:text-[#E65A2A] cursor-pointer relative hover:underline"
                       >
                         Back to login
                       </Link>

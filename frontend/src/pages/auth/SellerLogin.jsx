@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Eye, EyeOff, Shield } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import Spinner from "../../components/common/Spinner";
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { getErrorMessage, validateEmail } from '../../utils/errorHandler';
+import { getErrorMessage, validateEmail, validatePassword } from '../../utils/errorHandler';
 import whiteLogo from '../../assets/images/white_logo_with_text.png';
 
-const AdminLogin = () => {
+const SellerLogin = () => {
   const navigate = useNavigate();
-  const { adminLogin } = useAuth();
+  const { login } = useAuth();
   const { showToast } = useToast();
   const [formData, setFormData] = useState({
     email: '',
@@ -22,33 +22,18 @@ const AdminLogin = () => {
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
 
-  // Add this useEffect to handle any initialization logging
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('AdminLogin component mounted');
-    }
-  }, []);
-
-  useEffect(() => {
-    const rememberedEmail = localStorage.getItem('rememberedEmail');
-    if (rememberedEmail) {
-      setFormData(prev => ({ ...prev, email: rememberedEmail }));
-      setRememberMe(true);
-    }
-  }, []);
-
   const validateField = (name, value) => {
     switch (name) {
       case 'email':
         return validateEmail(value);
       case 'password':
-        return value.length < 6 ? 'Password must be at least 6 characters' : null;
+        return value.trim() === '' ? 'Password is required' : null;
       default:
         return null;
     }
   };
 
-  const handleChange = useCallback((e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     
     // Prevent leading spaces for all fields except password
@@ -67,9 +52,7 @@ const AdminLogin = () => {
     }));
 
     // Clear submit error when user starts typing
-    if (submitError) {
-      setSubmitError('');
-    }
+    if (submitError) setSubmitError('');
 
     // Validate field
     const error = validateField(name, value);
@@ -77,7 +60,7 @@ const AdminLogin = () => {
       ...prevErrors,
       [name]: error
     }));
-  }, [submitError]);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -98,25 +81,11 @@ const AdminLogin = () => {
       setIsLoading(true);
       setErrors({}); // Clear any previous errors
       
-      const result = await adminLogin(formData.email, formData.password);
+      const result = await login(formData.email, formData.password);
       
       if (result.success) {
-        // Handle remember me functionality
-        if (rememberMe) {
-          localStorage.setItem('rememberedEmail', formData.email);
-        } else {
-          localStorage.removeItem('rememberedEmail');
-        }
-
         showToast('Login successful!', 'success');
-        // Clear form data after successful login
-        setFormData({
-          email: '',
-          password: ''
-        });
-        
-        // Only navigate on successful login
-        navigate('/admin/dashboard');
+        navigate('/seller/dashboard');
       } else {
         // Set form errors for invalid credentials
         setErrors({
@@ -178,27 +147,15 @@ const AdminLogin = () => {
             >
               <div className="inline-flex items-center gap-2 bg-[#F3703A]/5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-4 sm:mb-6">
                 <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-[#F3703A] rounded-full animate-pulse" />
-                <span className="text-[#F3703A] text-xs sm:text-sm font-medium tracking-wider uppercase">Admin Portal</span>
+                <span className="text-[#F3703A] text-xs sm:text-sm font-medium tracking-wider uppercase">Seller Portal</span>
               </div>
 
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
-                Welcome to <span className="text-[#F3703A]">Admin Dashboard</span>
+                Welcome to <span className="text-[#F3703A]">Seller Login</span>
               </h1>
               <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
-                Access the admin portal to manage properties, users, and system settings.
+                Access your property listings, manage inquiries, and grow your business with our comprehensive seller tools.
               </p>
-
-              <div className="space-y-4 sm:space-y-6">
-                <div className="flex items-center gap-3 sm:gap-4 text-gray-600">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#F3703A]/10 flex items-center justify-center">
-                    <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-[#F3703A]" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Secure Access</h3>
-                    <p className="text-sm text-gray-600">Protected admin portal with enhanced security</p>
-                  </div>
-                </div>
-              </div>
             </motion.div>
 
             {/* Right Side - Login Form */}
@@ -209,9 +166,9 @@ const AdminLogin = () => {
               transition={{ duration: 0.6 }}
             >
               <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Admin Login</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Seller Login</h2>
                 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                   {/* Email Field */}
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -284,7 +241,7 @@ const AdminLogin = () => {
                     </div>
                     <Link
                       to="/forgot-password"
-                      className="text-sm font-medium text-[#F3703A] hover:text-[#E65A2A]"
+                      className="text-sm font-medium text-[#F3703A] hover:text-[#E65A2A] cursor-pointer hover:underline relative "
                     >
                       Forgot password?
                     </Link>
@@ -309,13 +266,21 @@ const AdminLogin = () => {
                     )}
                   </button>
 
-                  {/* Error Message */}
-                  {submitError && (
-                    <p className="text-sm text-red-600 text-center">
-                      {submitError}
-                    </p>
-                  )}
+                  {/* Error message will be inserted here by JavaScript */}
                 </form>
+
+                {/* Registration Link */}
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-gray-600">
+                    Don't have an account?{' '}
+                    <Link
+                      to="/seller/register"
+                      className="font-medium text-[#F3703A] hover:text-[#E65A2A] cursor-pointer relative hover:underline"
+                    >
+                      Register here
+                    </Link>
+                  </p>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -325,4 +290,4 @@ const AdminLogin = () => {
   );
 };
 
-export default AdminLogin; 
+export default SellerLogin; 
