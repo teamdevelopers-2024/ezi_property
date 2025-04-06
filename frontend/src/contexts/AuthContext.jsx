@@ -32,9 +32,24 @@ export const AuthProvider = ({ children }) => {
       const response = await api.get('/auth/me');
       setUser(response.data);
     } catch (error) {
-      localStorage.removeItem('token');
-      delete api.defaults.headers.common['Authorization'];
-      setUser(null);
+      // Check if we have a token but the auth check failed
+      const token = localStorage.getItem('token');
+      if (token) {
+        // If we have a token but the auth check failed, we might be an admin
+        // Let's try to check admin status
+        try {
+          const adminResponse = await api.get('/auth/admin/me');
+          setUser(adminResponse.data || { role: 'admin' });
+          return;
+        } catch (adminError) {
+          // If admin check also fails, clear the token
+          localStorage.removeItem('token');
+          delete api.defaults.headers.common['Authorization'];
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -42,59 +57,63 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await api.post('/auth/login', { email, password });
-      const { token, user } = response.data;
+      setIsLoading(true);
+      const response = await api.post('/auth/seller/login', { email, password });
       
-      // Verify that the user is a seller
-      if (user.role !== 'seller') {
-        throw new Error('Access denied. This login is for sellers only.');
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        setUser(response.data.user);
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+        return { success: true };
       }
-      
-      localStorage.setItem('token', token);
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(user);
-      
-      return user;
+      return { success: false, message: 'Login failed. Please try again.' };
     } catch (error) {
-      // Remove any existing token on error
-      localStorage.removeItem('token');
-      delete api.defaults.headers.common['Authorization'];
-      setUser(null);
-
+      // For 401 errors (wrong credentials), return a specific message
       if (error.response?.status === 401) {
-        throw new Error('Invalid email or password');
-      } else if (error.message.includes('Access denied')) {
-        throw new Error(error.message);
-      } else if (error.response?.data?.message) {
-        throw new Error(error.response.data.message);
-      } else {
-        throw new Error('Login failed. Please try again.');
+        return { 
+          success: false, 
+          message: 'Invalid email or password'
+        };
       }
+      // For other errors, return the server message or a generic one
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Login failed. Please try again.'
+      };
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const adminLogin = async (email, password) => {
     try {
+      setIsLoading(true);
       const response = await api.post('/auth/admin/login', { email, password });
-      const { token } = response.data;
       
-      localStorage.setItem('token', token);
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      
-      // For admin, we don't need to set the user state as it's handled by environment variables
-      return { success: true };
-    } catch (error) {
-      // Remove any existing token on error
-      localStorage.removeItem('token');
-      delete api.defaults.headers.common['Authorization'];
-
-      if (error.response?.status === 401) {
-        throw new Error('Invalid email or password');
-      } else if (error.response?.data?.message) {
-        throw new Error(error.response.data.message);
-      } else {
-        throw new Error('Admin login failed. Please try again.');
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        setUser(response.data.user);
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+        return { success: true };
       }
+      return { success: false, message: 'Admin login failed. Please try again.' };
+    } catch (error) {
+      // For 401 errors (wrong credentials), return a specific message
+      if (error.response?.status === 401) {
+        return { 
+          success: false, 
+          message: 'Invalid email or password'
+        };
+      }
+      // For other errors, return the server message or a generic one
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Admin login failed. Please try again.'
+      };
+    } finally {
+      setIsLoading(false);
     }
   };
 

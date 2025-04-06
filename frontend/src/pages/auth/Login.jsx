@@ -64,6 +64,11 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    // Prevent form submission if already loading
+    if (isLoading) return;
+    
     setIsLoading(true);
     setSubmitError('');
 
@@ -82,8 +87,7 @@ const Login = () => {
     }
 
     try {
-      const user = await login(formData.email, formData.password, 'seller');
-      console.log(user)
+      const user = await login(formData.email, formData.password);
       
       // Handle remember me functionality
       if (rememberMe) {
@@ -98,12 +102,26 @@ const Login = () => {
         email: '',
         password: ''
       });
-      navigate('/seller/dashboard')
+      
+      // Only navigate on successful login
+      navigate('/seller/dashboard');
     } catch (err) {
-      const errorMessage = getErrorMessage(err);
-      setSubmitError(errorMessage);
-      showToast(errorMessage, 'error');
-      // Keep the form data on error
+      // Show error message without re-rendering
+      const errorElement = document.querySelector('.error-message');
+      if (errorElement) {
+        errorElement.textContent = 'Wrong email or password';
+        errorElement.style.display = 'block';
+      } else {
+        const newErrorElement = document.createElement('div');
+        newErrorElement.className = 'error-message p-3 bg-red-50 border border-red-200 rounded-lg mt-4';
+        newErrorElement.innerHTML = '<p class="text-sm text-red-600 text-center">Wrong email or password</p>';
+        
+        // Insert after the submit button
+        const submitButton = document.querySelector('button[type="submit"]');
+        submitButton.parentNode.insertBefore(newErrorElement, submitButton.nextSibling);
+      }
+      
+      showToast('Wrong email or password', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -171,7 +189,7 @@ const Login = () => {
               <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Seller Login</h2>
                 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                   {/* Email Field */}
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -269,12 +287,7 @@ const Login = () => {
                     )}
                   </button>
 
-                  {/* Error Message */}
-                  {submitError && (
-                    <p className="text-sm text-red-600 text-center">
-                      {submitError}
-                    </p>
-                  )}
+                  {/* Error message will be inserted here by JavaScript */}
                 </form>
 
                 {/* Registration Link */}

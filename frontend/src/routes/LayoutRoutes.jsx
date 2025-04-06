@@ -4,9 +4,9 @@ import ErrorBoundary from "../components/ErrorBoundary";
 import { useAuth } from "../contexts/AuthContext";
 
 // Auth Pages
-import Login from "../pages/auth/Login";
+import SellerLogin from "../pages/auth/SellerLogin";
 import AdminLogin from "../pages/auth/AdminLogin";
-import Register from "../pages/auth/Register";
+import SellerRegister from '../pages/auth/SellerRegister';
 import ForgotPassword from "../pages/auth/ForgotPassword";
 
 // Admin Pages
@@ -51,20 +51,27 @@ const ProtectedRoute = ({ children, roles }) => {
     return <div>Loading...</div>;
   }
 
-  // For admin routes, check token instead of user object
+  // For admin routes, check both token and user object
   if (roles.includes('admin')) {
     if (!token) {
       return <Navigate to="/admin/login" replace />;
     }
+    
+    // If we have a token but no user object, we need to check auth status
+    if (!user) {
+      // We'll let the component render and let the auth context handle the check
+      return children;
+    }
+    
     return children;
   }
 
   // For other routes, check user object as before
   if (!user) {
     // Only redirect if we're not already on a login page
-    const isLoginPage = window.location.pathname === '/login';
+    const isLoginPage = window.location.pathname === '/seller/login';
     if (!isLoginPage) {
-      return <Navigate to="/login" replace />;
+      return <Navigate to="/seller/login" replace />;
     }
     return null;
   }
@@ -89,9 +96,9 @@ function LayoutRoutes() {
         <Route path="/seller/:id" element={<SellerPublicView />} />
 
         {/* Auth Routes */}
-        <Route path="/login" element={<Login />} />
+        <Route path="/seller/login" element={<SellerLogin />} />
         <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/seller/register" element={<SellerRegister />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Admin Routes */}

@@ -1,58 +1,53 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Eye, EyeOff, Shield } from 'lucide-react';
+import { User, Mail, Lock, Phone, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import Spinner from "../../components/common/Spinner";
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { getErrorMessage, validateEmail } from '../../utils/errorHandler';
+import { getErrorMessage, validatePassword, validateEmail, validatePhone, validateName } from '../../utils/errorHandler';
 import whiteLogo from '../../assets/images/white_logo_with_text.png';
 
-const AdminLogin = () => {
+const SellerRegister = () => {
   const navigate = useNavigate();
-  const { adminLogin } = useAuth();
+  const { register } = useAuth();
   const { showToast } = useToast();
   const [formData, setFormData] = useState({
+    name: '',
     email: '',
     password: '',
+    confirmPassword: '',
+    phone: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
 
-  // Add this useEffect to handle any initialization logging
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('AdminLogin component mounted');
-    }
-  }, []);
-
-  useEffect(() => {
-    const rememberedEmail = localStorage.getItem('rememberedEmail');
-    if (rememberedEmail) {
-      setFormData(prev => ({ ...prev, email: rememberedEmail }));
-      setRememberMe(true);
-    }
-  }, []);
-
   const validateField = (name, value) => {
     switch (name) {
+      case 'name':
+        return validateName(value);
       case 'email':
         return validateEmail(value);
+      case 'phone':
+        return validatePhone(value);
       case 'password':
-        return value.length < 6 ? 'Password must be at least 6 characters' : null;
+        const passwordErrors = validatePassword(value);
+        return passwordErrors.length > 0 ? passwordErrors.join('. ') : null;
+      case 'confirmPassword':
+        return value !== formData.password ? 'Passwords do not match' : null;
       default:
         return null;
     }
   };
 
-  const handleChange = useCallback((e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     
     // Prevent leading spaces for all fields except password
-    if (name !== 'password' && value.startsWith(' ')) {
+    if (name !== 'password' && name !== 'confirmPassword' && value.startsWith(' ')) {
       return;
     }
 
@@ -67,9 +62,7 @@ const AdminLogin = () => {
     }));
 
     // Clear submit error when user starts typing
-    if (submitError) {
-      setSubmitError('');
-    }
+    if (submitError) setSubmitError('');
 
     // Validate field
     const error = validateField(name, value);
@@ -77,61 +70,48 @@ const AdminLogin = () => {
       ...prevErrors,
       [name]: error
     }));
-  }, [submitError]);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    setIsLoading(true);
+    setSubmitError('');
+
     // Validate all fields
-    const emailError = validateEmail(formData.email);
-    const passwordError = formData.password.trim() === '' ? 'Password is required' : null;
-    
-    if (emailError || passwordError) {
-      setErrors({
-        email: emailError,
-        password: passwordError
-      });
+    const newErrors = {};
+    Object.keys(formData).forEach(field => {
+      const error = validateField(field, formData[field]);
+      if (error) newErrors[field] = error;
+    });
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setIsLoading(false);
+      setSubmitError('Please fix the errors before submitting.');
       return;
     }
 
     try {
-      setIsLoading(true);
-      setErrors({}); // Clear any previous errors
+      // Remove confirmPassword before sending to API
+      const { confirmPassword, ...userData } = formData;
+      const user = await register(userData);
       
-      const result = await adminLogin(formData.email, formData.password);
-      
-      if (result.success) {
-        // Handle remember me functionality
-        if (rememberMe) {
-          localStorage.setItem('rememberedEmail', formData.email);
-        } else {
-          localStorage.removeItem('rememberedEmail');
-        }
-
-        showToast('Login successful!', 'success');
-        // Clear form data after successful login
-        setFormData({
-          email: '',
-          password: ''
-        });
-        
-        // Only navigate on successful login
-        navigate('/admin/dashboard');
-      } else {
-        // Set form errors for invalid credentials
-        setErrors({
-          email: 'Invalid email or password',
-          password: 'Invalid email or password'
-        });
-        showToast(result.message, 'error');
-      }
-    } catch (error) {
-      // Set form errors for invalid credentials
-      setErrors({
-        email: 'Invalid email or password',
-        password: 'Invalid email or password'
+      showToast(`Registration successful! Welcome, ${user.name}.`, 'success');
+      // Clear form data after successful registration
+      setFormData({
+        name: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        phone: '',
       });
-      showToast(error.message || 'Login failed. Please try again.', 'error');
+      
+      // Navigate to seller dashboard
+      navigate('/seller/dashboard');
+    } catch (err) {
+      const errorMessage = getErrorMessage(err);
+      setSubmitError(errorMessage);
+      showToast(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -178,30 +158,18 @@ const AdminLogin = () => {
             >
               <div className="inline-flex items-center gap-2 bg-[#F3703A]/5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-4 sm:mb-6">
                 <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-[#F3703A] rounded-full animate-pulse" />
-                <span className="text-[#F3703A] text-xs sm:text-sm font-medium tracking-wider uppercase">Admin Portal</span>
+                <span className="text-[#F3703A] text-xs sm:text-sm font-medium tracking-wider uppercase">Seller Portal</span>
               </div>
 
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
-                Welcome to <span className="text-[#F3703A]">Admin Dashboard</span>
+                Join <span className="text-[#F3703A]">EZI Property</span> as a Seller
               </h1>
               <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
-                Access the admin portal to manage properties, users, and system settings.
+                Create your seller account to list properties, manage inquiries, and grow your real estate business with our comprehensive platform.
               </p>
-
-              <div className="space-y-4 sm:space-y-6">
-                <div className="flex items-center gap-3 sm:gap-4 text-gray-600">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#F3703A]/10 flex items-center justify-center">
-                    <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-[#F3703A]" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Secure Access</h3>
-                    <p className="text-sm text-gray-600">Protected admin portal with enhanced security</p>
-                  </div>
-                </div>
-              </div>
             </motion.div>
 
-            {/* Right Side - Login Form */}
+            {/* Right Side - Registration Form */}
             <motion.div
               className="w-full lg:w-1/2 max-w-md"
               initial={{ opacity: 0, x: 20 }}
@@ -209,9 +177,32 @@ const AdminLogin = () => {
               transition={{ duration: 0.6 }}
             >
               <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Admin Login</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Seller Registration</h2>
                 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+                  {/* Name Field */}
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                      Full Name
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#F3703A] focus:border-transparent ${
+                          errors.name ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter your full name"
+                        required
+                      />
+                    </div>
+                    {renderFieldError('name')}
+                  </div>
+
                   {/* Email Field */}
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -235,6 +226,29 @@ const AdminLogin = () => {
                     {renderFieldError('email')}
                   </div>
 
+                  {/* Phone Field */}
+                  <div>
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone Number
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        type="tel"
+                        id="phone"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#F3703A] focus:border-transparent ${
+                          errors.phone ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter your phone number"
+                        required
+                      />
+                    </div>
+                    {renderFieldError('phone')}
+                  </div>
+
                   {/* Password Field */}
                   <div>
                     <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
@@ -251,7 +265,7 @@ const AdminLogin = () => {
                         className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-[#F3703A] focus:border-transparent ${
                           errors.password ? 'border-red-500' : 'border-gray-300'
                         }`}
-                        placeholder="Enter your password"
+                        placeholder="Create a password"
                       />
                       <button
                         type="button"
@@ -268,26 +282,37 @@ const AdminLogin = () => {
                     {renderFieldError('password')}
                   </div>
 
-                  {/* Remember Me */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
+                  {/* Confirm Password Field */}
+                  <div>
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                      Confirm Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                       <input
-                        type="checkbox"
-                        id="rememberMe"
-                        checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
-                        className="h-4 w-4 text-[#F3703A] focus:ring-[#F3703A] border-gray-300 rounded"
+                        type={showConfirmPassword ? "text" : "password"}
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-[#F3703A] focus:border-transparent ${
+                          errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="Confirm your password"
                       />
-                      <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
-                        Remember me
-                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
                     </div>
-                    <Link
-                      to="/forgot-password"
-                      className="text-sm font-medium text-[#F3703A] hover:text-[#E65A2A]"
-                    >
-                      Forgot password?
-                    </Link>
+                    {renderFieldError('confirmPassword')}
                   </div>
 
                   {/* Submit Button */}
@@ -299,11 +324,11 @@ const AdminLogin = () => {
                     {isLoading ? (
                       <>
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>Signing in...</span>
+                        <span>Creating account...</span>
                       </>
                     ) : (
                       <>
-                        <span>Sign in</span>
+                        <span>Create account</span>
                         <ArrowRight className="w-5 h-5" />
                       </>
                     )}
@@ -311,11 +336,26 @@ const AdminLogin = () => {
 
                   {/* Error Message */}
                   {submitError && (
-                    <p className="text-sm text-red-600 text-center">
-                      {submitError}
-                    </p>
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-sm text-red-600 text-center">
+                        {submitError}
+                      </p>
+                    </div>
                   )}
                 </form>
+
+                {/* Login Link */}
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-gray-600">
+                    Already have an account?{' '}
+                    <Link
+                      to="/seller/login"
+                      className="font-medium text-[#F3703A] hover:text-[#E65A2A] cursor-pointer relative hover:underline"
+                    >
+                      Sign in
+                    </Link>
+                  </p>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -325,4 +365,4 @@ const AdminLogin = () => {
   );
 };
 
-export default AdminLogin; 
+export default SellerRegister; 
