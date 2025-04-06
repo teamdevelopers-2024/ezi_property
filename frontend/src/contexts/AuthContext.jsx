@@ -40,14 +40,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password, role) => {
+  const login = async (email, password) => {
     try {
-      const response = await api.post('/auth/login', { email, password, role });
+      const response = await api.post('/auth/login', { email, password });
       const { token, user } = response.data;
       
-      // Verify that the user has the correct role
-      if (user.role !== role) {
-        throw new Error(`Access denied. This login is for ${role}s only.`);
+      // Verify that the user is a seller
+      if (user.role !== 'seller') {
+        throw new Error('Access denied. This login is for sellers only.');
       }
       
       localStorage.setItem('token', token);
@@ -56,7 +56,45 @@ export const AuthProvider = ({ children }) => {
       
       return user;
     } catch (error) {
-      throw error;
+      // Remove any existing token on error
+      localStorage.removeItem('token');
+      delete api.defaults.headers.common['Authorization'];
+      setUser(null);
+
+      if (error.response?.status === 401) {
+        throw new Error('Invalid email or password');
+      } else if (error.message.includes('Access denied')) {
+        throw new Error(error.message);
+      } else if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      } else {
+        throw new Error('Login failed. Please try again.');
+      }
+    }
+  };
+
+  const adminLogin = async (email, password) => {
+    try {
+      const response = await api.post('/auth/admin/login', { email, password });
+      const { token } = response.data;
+      
+      localStorage.setItem('token', token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      // For admin, we don't need to set the user state as it's handled by environment variables
+      return { success: true };
+    } catch (error) {
+      // Remove any existing token on error
+      localStorage.removeItem('token');
+      delete api.defaults.headers.common['Authorization'];
+
+      if (error.response?.status === 401) {
+        throw new Error('Invalid email or password');
+      } else if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      } else {
+        throw new Error('Admin login failed. Please try again.');
+      }
     }
   };
 
@@ -86,6 +124,7 @@ export const AuthProvider = ({ children }) => {
     user,
     isLoading,
     login,
+    adminLogin,
     register,
     logout,
     checkAuthStatus
@@ -96,6 +135,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
-
-export default AuthContext; 
+}; 

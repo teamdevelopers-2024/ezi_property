@@ -25,15 +25,11 @@ export const validateEmail = (email) => {
     return 'Email is required';
   }
 
-  // Check if email ends with @gmail.com
-  if (!email.endsWith('@gmail.com')) {
-    return 'Email must be a Gmail address';
-  }
-
-  // Basic email format validation for the part before @gmail.com
-  const localPart = email.split('@')[0];
-  if (!/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+$/.test(localPart)) {
-    return 'Invalid email format';
+  // Regular expression for email validation
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  
+  if (!emailRegex.test(email)) {
+    return 'Please enter a valid email address';
   }
 
   return null;

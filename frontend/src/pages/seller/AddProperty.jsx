@@ -5,7 +5,7 @@ import { Upload, MapPin, DollarSign, Home, BedDouble, Bath, Square, Plus, Trash2
 import { useToast } from '../../contexts/ToastContext';
 import api from '../../services/api';
 
-const AddProperty = () => {
+const SellerAddProperty = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -509,4 +509,4 @@ const AddProperty = () => {
   );
 };
 
-export default AddProperty; 
+export default SellerAddProperty; 

@@ -20,12 +20,12 @@ const userSchema = new Schema({
   },
   role: {
     type: String,
-    enum: ['seller', 'admin'],
+    enum: ['seller'],
     default: 'seller'
   },
   phoneNumber: {
     type: String,
-    required: true,
+    required: true
   },
   createdAt: {
     type: Date,

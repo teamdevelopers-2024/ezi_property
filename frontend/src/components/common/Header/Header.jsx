@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import Colors from "../../../styles/Colors";
+import whiteLogo from "../../../assets/images/white_logo_with_text.png";
 
 const Header = () => {
   const [isSticky, setIsSticky] = useState(false);
@@ -76,17 +77,12 @@ const Header = () => {
           `}>
         {/* Logo */}
             <a href="#" className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-all duration-300">
-              <div className="p-2 rounded-xl transform hover:scale-105 transition-all duration-300" style={{ backgroundColor: `${Colors.secondary}15` }}>
-            <img
-              src="/img/icon-deal.png"
-              alt="Icon"
-              className="h-8 w-8 object-contain"
-            />
-          </div>
-          <h1 className="text-2xl font-bold" style={{ color: Colors.secondary }}>
-            EZI
-          </h1>
-        </a>
+              <img
+                src={whiteLogo}
+                alt="EZI Property"
+                className="h-12 object-contain"
+              />
+            </a>
 
             {/* Desktop Menu */}
             <div className="hidden lg:flex items-center gap-8">

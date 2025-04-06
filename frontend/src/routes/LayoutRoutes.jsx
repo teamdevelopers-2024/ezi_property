@@ -10,17 +10,21 @@ import Register from "../pages/auth/Register";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 
 // Admin Pages
-import AdminDashboard from "../pages/admin/Dashboard";
+import AdminDashboard from "../pages/admin/AdminDashboard";
 import Reports from "../pages/admin/Reports";
-import ManageProperties from "../pages/admin/ManageProperties";
+import PropertyList from "../pages/admin/PropertyList";
+import AddProperty from "../pages/admin/AddProperty";
+import EditProperty from "../pages/admin/EditProperty";
 import AdminUsers from "../pages/admin/AdminUsers";
 import AdminSettings from "../pages/admin/AdminSettings";
+import FeaturedProperties from '../pages/admin/FeaturedProperties';
+import SellerPerformance from '../pages/admin/SellerPerformance';
 
 // Seller Pages
 import SellerDashboard from "../pages/seller/Dashboard";
 import SellerProperties from "../pages/seller/SellerProperties";
 import SellerPublicView from "../pages/seller/SellerPublicView";
-import AddProperty from "../pages/seller/AddProperty";
+import SellerAddProperty from "../pages/seller/AddProperty";
 import SellerManageProperties from "../pages/seller/ManageProperties";
 import SellerProfile from "../pages/seller/SellerProfile";
 
@@ -41,13 +45,28 @@ import Onboarding from "../pages/Onboarding";
 // Protected Route Component
 const ProtectedRoute = ({ children, roles }) => {
   const { user, loading } = useAuth();
+  const token = localStorage.getItem('token');
 
   if (loading) {
     return <div>Loading...</div>;
   }
 
+  // For admin routes, check token instead of user object
+  if (roles.includes('admin')) {
+    if (!token) {
+      return <Navigate to="/admin/login" replace />;
+    }
+    return children;
+  }
+
+  // For other routes, check user object as before
   if (!user) {
-    return <Navigate to={roles.includes('admin') ? '/admin/login' : '/login'} replace />;
+    // Only redirect if we're not already on a login page
+    const isLoginPage = window.location.pathname === '/login';
+    if (!isLoginPage) {
+      return <Navigate to="/login" replace />;
+    }
+    return null;
   }
 
   if (roles && !roles.includes(user.role)) {
@@ -96,7 +115,23 @@ function LayoutRoutes() {
           path="/admin/properties"
           element={
             <ProtectedRoute roles={["admin"]}>
-              <ManageProperties />
+              <PropertyList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/properties/add"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AddProperty />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/properties/edit/:id"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <EditProperty />
             </ProtectedRoute>
           }
         />
@@ -113,6 +148,22 @@ function LayoutRoutes() {
           element={
             <ProtectedRoute roles={["admin"]}>
               <AdminSettings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/featured-properties"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <FeaturedProperties />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/seller-performance"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <SellerPerformance />
             </ProtectedRoute>
           }
         />
@@ -138,7 +189,7 @@ function LayoutRoutes() {
           path="/seller/properties/add"
           element={
             <ProtectedRoute roles={["seller"]}>
-              <AddProperty />
+              <SellerAddProperty />
             </ProtectedRoute>
           }
         />

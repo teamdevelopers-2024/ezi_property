@@ -6,6 +6,7 @@ import Spinner from "../../components/common/Spinner";
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { getErrorMessage, validateEmail } from '../../utils/errorHandler';
+import whiteLogo from '../../assets/images/white_logo_with_text.png';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -82,6 +83,7 @@ const Login = () => {
 
     try {
       const user = await login(formData.email, formData.password, 'seller');
+      console.log(user)
       
       // Handle remember me functionality
       if (rememberMe) {
@@ -90,12 +92,18 @@ const Login = () => {
         localStorage.removeItem('rememberedEmail');
       }
 
-      showToast('Login successful! Welcome back.', 'success');
-      navigate('/seller/dashboard');
+      showToast(`Login successful! Welcome back, ${user.name}.`, 'success');
+      // Clear form data after successful login
+      setFormData({
+        email: '',
+        password: ''
+      });
+      navigate('/seller/dashboard')
     } catch (err) {
       const errorMessage = getErrorMessage(err);
       setSubmitError(errorMessage);
       showToast(errorMessage, 'error');
+      // Keep the form data on error
     } finally {
       setIsLoading(false);
     }
@@ -117,9 +125,9 @@ const Login = () => {
         <div className="absolute top-4 sm:top-8 left-4 sm:left-8 lg:left-24 z-10">
           <Link 
             to="/"
-            className="text-xl sm:text-2xl font-bold text-[#F3703A] hover:text-[#E65A2A] transition-colors duration-300 cursor-pointer"
+            className="block hover:opacity-90 transition-all duration-300"
           >
-            EZI Property
+            <img src={whiteLogo} alt="EZI Property" className="h-8" />
           </Link>
         </div>
 
@@ -181,6 +189,7 @@ const Login = () => {
                           errors.email ? 'border-red-500' : 'border-gray-300'
                         }`}
                         placeholder="Enter your email"
+                        required
                       />
                     </div>
                     {renderFieldError('email')}

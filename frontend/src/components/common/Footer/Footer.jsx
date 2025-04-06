@@ -17,6 +17,7 @@ import Property3 from "../../../assets/images/property-3.jpg";
 import Property4 from "../../../assets/images/property-4.jpg";
 import Property5 from "../../../assets/images/property-5.jpg";
 import Property6 from "../../../assets/images/property-6.jpg";
+import whiteLogo from "../../../assets/images/white_logo_with_text.png";
 
 const Footer = () => {
   const containerVariants = {
@@ -113,19 +114,11 @@ const Footer = () => {
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <div
-                  className="p-2.5 rounded-xl bg-white/10 transform group-hover:scale-105 transition-all duration-300"
-                  style={{ border: `2px solid ${Colors.secondary}` }}
-                >
-                  <img
-                    src="/img/icon-deal.png"
-                    alt="Icon"
-                    className="h-8 w-8 object-contain"
-                  />
-                </div>
-                <h1 className="text-2xl font-bold text-white group-hover:text-secondary transition-colors duration-300">
-                  EZI
-                </h1>
+                <img
+                  src={whiteLogo}
+                  alt="EZI Property"
+                  className="h-8 object-contain"
+                />
               </motion.div>
 
               <div className="space-y-4">

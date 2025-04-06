@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Eye, EyeOff, Shield } from 'lucide-react';
@@ -6,10 +6,11 @@ import Spinner from "../../components/common/Spinner";
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { getErrorMessage, validateEmail } from '../../utils/errorHandler';
+import whiteLogo from '../../assets/images/white_logo_with_text.png';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { adminLogin } = useAuth();
   const { showToast } = useToast();
   const [formData, setFormData] = useState({
     email: '',
@@ -20,6 +21,13 @@ const AdminLogin = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
+
+  // Add this useEffect to handle any initialization logging
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('AdminLogin component mounted');
+    }
+  }, []);
 
   useEffect(() => {
     const rememberedEmail = localStorage.getItem('rememberedEmail');
@@ -40,7 +48,7 @@ const AdminLogin = () => {
     }
   };
 
-  const handleChange = (e) => {
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target;
     
     // Prevent leading spaces for all fields except password
@@ -59,7 +67,9 @@ const AdminLogin = () => {
     }));
 
     // Clear submit error when user starts typing
-    if (submitError) setSubmitError('');
+    if (submitError) {
+      setSubmitError('');
+    }
 
     // Validate field
     const error = validateField(name, value);
@@ -67,7 +77,7 @@ const AdminLogin = () => {
       ...prevErrors,
       [name]: error
     }));
-  };
+  }, [submitError]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -87,9 +97,9 @@ const AdminLogin = () => {
       setSubmitError('Please fix the errors before submitting.');
       return;
     }
-
+ 
     try {
-      const user = await login(formData.email, formData.password, 'admin');
+      await adminLogin(formData.email, formData.password);
       
       // Handle remember me functionality
       if (rememberMe) {
@@ -98,7 +108,14 @@ const AdminLogin = () => {
         localStorage.removeItem('rememberedEmail');
       }
 
-      showToast('Login successful! Welcome back.', 'success');
+      showToast(`Login successful! Welcome back, Admin.`, 'success');
+      // Clear form data after successful login
+      setFormData({
+        email: '',
+        password: ''
+      });
+      
+      // Navigate to admin dashboard
       navigate('/admin/dashboard');
     } catch (err) {
       const errorMessage = getErrorMessage(err);
@@ -125,9 +142,9 @@ const AdminLogin = () => {
         <div className="absolute top-4 sm:top-8 left-4 sm:left-8 lg:left-24 z-10">
           <Link 
             to="/"
-            className="text-xl sm:text-2xl font-bold text-[#F3703A] hover:text-[#E65A2A] transition-colors duration-300 cursor-pointer"
+            className="block hover:opacity-90 transition-all duration-300"
           >
-            EZI Property
+            <img src={whiteLogo} alt="EZI Property" className="h-8" />
           </Link>
         </div>
 
@@ -201,6 +218,7 @@ const AdminLogin = () => {
                           errors.email ? 'border-red-500' : 'border-gray-300'
                         }`}
                         placeholder="Enter your email"
+                        required
                       />
                     </div>
                     {renderFieldError('email')}

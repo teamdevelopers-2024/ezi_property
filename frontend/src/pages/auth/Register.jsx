@@ -6,6 +6,7 @@ import Spinner from "../../components/common/Spinner";
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { getErrorMessage, validatePassword, validateEmail, validatePhone, validateName } from '../../utils/errorHandler';
+import whiteLogo from '../../assets/images/white_logo_with_text.png';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -162,9 +163,9 @@ const Register = () => {
         <div className="absolute top-4 sm:top-8 left-4 sm:left-8 lg:left-24 z-10">
           <Link 
             to="/"
-            className="text-xl sm:text-2xl font-bold text-[#F3703A] hover:text-[#E65A2A] transition-colors duration-300 cursor-pointer"
+            className="block hover:opacity-90 transition-all duration-300"
           >
-            EZI Property
+            <img src={whiteLogo} alt="EZI Property" className="h-8" />
           </Link>
         </div>
 
@@ -281,29 +282,17 @@ const Register = () => {
                         <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-[#F3703A]" />
                       </div>
                       <input
-                        type="text"
+                        type="email"
                         id="email"
                         name="email"
-                        value={formData.email.split('@')[0]}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          const sanitizedValue = value.replace(/[@\s]/g, '');
-                          handleChange({
-                            target: {
-                              name: 'email',
-                              value: sanitizedValue + '@gmail.com'
-                            }
-                          });
-                        }}
-                        className={`block w-full pl-9 sm:pl-10 pr-[105px] py-2 sm:py-3 text-sm sm:text-base border ${
+                        value={formData.email}
+                        onChange={handleChange}
+                        className={`block w-full pl-9 sm:pl-10 pr-3 py-2 sm:py-3 text-sm sm:text-base border ${
                           errors.email ? 'border-red-300' : 'border-gray-300'
                         } rounded-xl focus:ring-2 focus:ring-[#F3703A]/20 focus:border-[#F3703A] focus:outline-none transition-all duration-300 text-gray-900 cursor-text`}
                         placeholder="Enter your email"
                         required
                       />
-                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                        <span className="text-gray-500 text-sm sm:text-base">@gmail.com</span>
-                      </div>
                     </div>
                     {renderFieldError('email')}
                   </div>

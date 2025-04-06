@@ -6,7 +6,47 @@ import { validatePassword, validateEmail, validatePhone, validateName } from '..
 
 const router = express.Router();
 
-// Register route
+// Admin login route
+router.post('/admin/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Verify admin credentials from environment variables
+    if (email !== process.env.ADMIN_EMAIL || password !== process.env.ADMIN_PASSWORD) {
+      return res.status(401).json({ message: 'Invalid admin credentials' });
+    }
+
+    // Generate token for admin
+    const token = jwt.sign(
+      { 
+        email: process.env.ADMIN_EMAIL,
+        role: 'admin'
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // Return success response
+    res.json({
+      message: 'Admin login successful',
+      token,
+      user: {
+        email: process.env.ADMIN_EMAIL,
+        role: 'admin',
+        name: 'Admin'
+      }
+    });
+
+  } catch (error) {
+    console.error('Admin login error:', error);
+    res.status(500).json({ 
+      message: 'Admin login failed',
+      error: error.message 
+    });
+  }
+});
+
+// Register route (for sellers only)
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password, confirmPassword, phone } = req.body;
@@ -92,7 +132,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Login route
+// Login route (for sellers only)
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;

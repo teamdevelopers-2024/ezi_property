@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Mail, ArrowRight } from 'lucide-react';
+import { Mail, ArrowRight, ArrowLeft } from 'lucide-react';
 import Spinner from "../../components/common/Spinner";
+import whiteLogo from '../../assets/images/white_logo_with_text.png';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -30,14 +31,14 @@ const ForgotPassword = () => {
   return (
     <>
       {isLoading && <Spinner />}
-      <section className="h-screen bg-gradient-to-b from-gray-50 to-white relative overflow-hidden flex items-center">
+      <section className="min-h-screen bg-gradient-to-b from-gray-50 to-white relative overflow-hidden flex items-center">
         {/* Brand Logo */}
         <div className="absolute top-8 left-8 lg:left-24 z-10">
           <Link 
             to="/"
-            className="text-2xl font-bold text-[#F3703A] hover:text-[#E65A2A] transition-colors duration-300 cursor-pointer"
+            className="block hover:opacity-90 transition-all duration-300"
           >
-            EZI Property
+            <img src={whiteLogo} alt="EZI Property" className="h-8" />
           </Link>
         </div>
 
