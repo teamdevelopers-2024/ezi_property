@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import Colors from "../../../styles/Colors";
+import whiteLogo from "../../../assets/images/white_logo_with_text.png";
 
 const Header = () => {
   const [isSticky, setIsSticky] = useState(false);
@@ -76,17 +77,12 @@ const Header = () => {
           `}>
         {/* Logo */}
             <a href="#" className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-all duration-300">
-              <div className="p-2 rounded-xl transform hover:scale-105 transition-all duration-300" style={{ backgroundColor: `${Colors.secondary}15` }}>
-            <img
-              src="/img/icon-deal.png"
-              alt="Icon"
-              className="h-8 w-8 object-contain"
-            />
-          </div>
-          <h1 className="text-2xl font-bold" style={{ color: Colors.secondary }}>
-            EZI
-          </h1>
-        </a>
+              <img
+                src={whiteLogo}
+                alt="EZI Property"
+                className="h-12 object-contain"
+              />
+            </a>
 
             {/* Desktop Menu */}
             <div className="hidden lg:flex items-center gap-8">
@@ -130,7 +126,7 @@ const Header = () => {
 
           {/* Seller Login Button */}
           <button
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/seller/login")}
                 className="px-6 py-2.5 text-white rounded-xl transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer transform hover:scale-105 hover:-translate-y-0.5"
             style={{
               backgroundColor: Colors.secondary,
@@ -223,7 +219,7 @@ const Header = () => {
                 ))}
                 <div className="px-4 pt-4">
                   <button
-                    onClick={() => navigate("/login")}
+                    onClick={() => navigate("/seller/login")}
                     className={`
                       w-full px-6 py-3 text-white rounded-xl
                       bg-[#F3703A] hover:bg-[#E65A2A]

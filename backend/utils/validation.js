@@ -1,39 +1,3 @@
-export const sanitizeInput = (value) => {
-  return value.trim();
-};
-
-export const getErrorMessage = (error) => {
-  if (error.response) {
-    // Server responded with error
-    switch (error.response.status) {
-      case 400:
-        return error.response.data.message || 'Invalid request. Please check your input.';
-      case 401:
-        return 'Authentication failed. Please log in again.';
-      case 403:
-        return 'You do not have permission to perform this action.';
-      case 404:
-        return 'The requested resource was not found.';
-      case 409:
-        return error.response.data.message || 'This resource already exists.';
-      case 422:
-        return error.response.data.message || 'Validation failed. Please check your input.';
-      case 429:
-        return 'Too many requests. Please try again later.';
-      case 500:
-        return 'Server error. Please try again later.';
-      default:
-        return error.response.data.message || 'An unexpected error occurred.';
-    }
-  } else if (error.request) {
-    // Request was made but no response
-    return 'Unable to connect to the server. Please check your internet connection.';
-  } else {
-    // Something else happened
-    return error.message || 'An unexpected error occurred.';
-  }
-};
-
 export const validatePassword = (password) => {
   const errors = [];
   

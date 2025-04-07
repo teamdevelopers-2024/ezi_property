@@ -5,10 +5,10 @@ import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import Spinner from "../../components/common/Spinner";
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { getErrorMessage, validateEmail } from '../../utils/errorHandler';
+import { getErrorMessage, validateEmail, validatePassword } from '../../utils/errorHandler';
 import whiteLogo from '../../assets/images/white_logo_with_text.png';
 
-const Login = () => {
+const SellerLogin = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { showToast } = useToast();
@@ -27,7 +27,7 @@ const Login = () => {
       case 'email':
         return validateEmail(value);
       case 'password':
-        return value.length < 6 ? 'Password must be at least 6 characters' : null;
+        return value.trim() === '' ? 'Password is required' : null;
       default:
         return null;
     }
@@ -64,64 +64,43 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    e.stopPropagation();
     
-    // Prevent form submission if already loading
-    if (isLoading) return;
-    
-    setIsLoading(true);
-    setSubmitError('');
-
     // Validate all fields
-    const newErrors = {};
-    Object.keys(formData).forEach(field => {
-      const error = validateField(field, formData[field]);
-      if (error) newErrors[field] = error;
-    });
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      setIsLoading(false);
-      setSubmitError('Please fix the errors before submitting.');
+    const emailError = validateEmail(formData.email);
+    const passwordError = formData.password.trim() === '' ? 'Password is required' : null;
+    
+    if (emailError || passwordError) {
+      setErrors({
+        email: emailError,
+        password: passwordError
+      });
       return;
     }
 
     try {
-      const user = await login(formData.email, formData.password);
+      setIsLoading(true);
+      setErrors({}); // Clear any previous errors
       
-      // Handle remember me functionality
-      if (rememberMe) {
-        localStorage.setItem('rememberedEmail', formData.email);
+      const result = await login(formData.email, formData.password);
+      
+      if (result.success) {
+        showToast('Login successful!', 'success');
+        navigate('/seller/dashboard');
       } else {
-        localStorage.removeItem('rememberedEmail');
+        // Set form errors for invalid credentials
+        setErrors({
+          email: 'Invalid email or password',
+          password: 'Invalid email or password'
+        });
+        showToast(result.message, 'error');
       }
-
-      showToast(`Login successful! Welcome back, ${user.name}.`, 'success');
-      // Clear form data after successful login
-      setFormData({
-        email: '',
-        password: ''
+    } catch (error) {
+      // Set form errors for invalid credentials
+      setErrors({
+        email: 'Invalid email or password',
+        password: 'Invalid email or password'
       });
-      
-      // Only navigate on successful login
-      navigate('/seller/dashboard');
-    } catch (err) {
-      // Show error message without re-rendering
-      const errorElement = document.querySelector('.error-message');
-      if (errorElement) {
-        errorElement.textContent = 'Wrong email or password';
-        errorElement.style.display = 'block';
-      } else {
-        const newErrorElement = document.createElement('div');
-        newErrorElement.className = 'error-message p-3 bg-red-50 border border-red-200 rounded-lg mt-4';
-        newErrorElement.innerHTML = '<p class="text-sm text-red-600 text-center">Wrong email or password</p>';
-        
-        // Insert after the submit button
-        const submitButton = document.querySelector('button[type="submit"]');
-        submitButton.parentNode.insertBefore(newErrorElement, submitButton.nextSibling);
-      }
-      
-      showToast('Wrong email or password', 'error');
+      showToast(error.message || 'Login failed. Please try again.', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -172,7 +151,7 @@ const Login = () => {
               </div>
 
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
-                Welcome to <span className="text-[#F3703A]">Seller Dashboard</span>
+                Welcome to <span className="text-[#F3703A]">Seller Login</span>
               </h1>
               <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
                 Access your property listings, manage inquiries, and grow your business with our comprehensive seller tools.
@@ -295,7 +274,7 @@ const Login = () => {
                   <p className="text-sm text-gray-600">
                     Don't have an account?{' '}
                     <Link
-                      to="/register"
+                      to="/seller/register"
                       className="font-medium text-[#F3703A] hover:text-[#E65A2A] cursor-pointer relative hover:underline"
                     >
                       Register here
@@ -311,4 +290,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default SellerLogin; 

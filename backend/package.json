@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Backend for EZI Property application",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "nodemon server.js",
     "dev": "nodemon server.js"

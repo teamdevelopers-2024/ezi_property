@@ -1,16 +1,19 @@
 import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
-import LayoutRoutes from './routes/LayoutRoutes';
+import { BrowserRouter as Router } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext';
+import LayoutRoutes from './routes/LayoutRoutes';
 
-function App() {
+const App = () => {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <LayoutRoutes />
-      </AuthProvider>
-    </BrowserRouter>
+    <Router>
+      <ToastProvider>
+        <AuthProvider>
+          <LayoutRoutes />
+        </AuthProvider>
+      </ToastProvider>
+    </Router>
   );
-}
+};
 
 export default App;

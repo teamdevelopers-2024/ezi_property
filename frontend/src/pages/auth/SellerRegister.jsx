@@ -1,33 +1,43 @@
 import React, { useState } from "react";
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Lock, Phone, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import Spinner from "../../components/common/Spinner";
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { getErrorMessage, validateEmail } from '../../utils/errorHandler';
+import { getErrorMessage, validatePassword, validateEmail, validatePhone, validateName } from '../../utils/errorHandler';
 import whiteLogo from '../../assets/images/white_logo_with_text.png';
 
-const Login = () => {
+const SellerRegister = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { register } = useAuth();
   const { showToast } = useToast();
   const [formData, setFormData] = useState({
+    name: '',
     email: '',
     password: '',
+    confirmPassword: '',
+    phone: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
 
   const validateField = (name, value) => {
     switch (name) {
+      case 'name':
+        return validateName(value);
       case 'email':
         return validateEmail(value);
+      case 'phone':
+        return validatePhone(value);
       case 'password':
-        return value.length < 6 ? 'Password must be at least 6 characters' : null;
+        const passwordErrors = validatePassword(value);
+        return passwordErrors.length > 0 ? passwordErrors.join('. ') : null;
+      case 'confirmPassword':
+        return value !== formData.password ? 'Passwords do not match' : null;
       default:
         return null;
     }
@@ -37,7 +47,7 @@ const Login = () => {
     const { name, value } = e.target;
     
     // Prevent leading spaces for all fields except password
-    if (name !== 'password' && value.startsWith(' ')) {
+    if (name !== 'password' && name !== 'confirmPassword' && value.startsWith(' ')) {
       return;
     }
 
@@ -64,11 +74,6 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    e.stopPropagation();
-    
-    // Prevent form submission if already loading
-    if (isLoading) return;
-    
     setIsLoading(true);
     setSubmitError('');
 
@@ -87,41 +92,26 @@ const Login = () => {
     }
 
     try {
-      const user = await login(formData.email, formData.password);
+      // Remove confirmPassword before sending to API
+      const { confirmPassword, ...userData } = formData;
+      const user = await register(userData);
       
-      // Handle remember me functionality
-      if (rememberMe) {
-        localStorage.setItem('rememberedEmail', formData.email);
-      } else {
-        localStorage.removeItem('rememberedEmail');
-      }
-
-      showToast(`Login successful! Welcome back, ${user.name}.`, 'success');
-      // Clear form data after successful login
+      showToast(`Registration successful! Welcome, ${user.name}.`, 'success');
+      // Clear form data after successful registration
       setFormData({
+        name: '',
         email: '',
-        password: ''
+        password: '',
+        confirmPassword: '',
+        phone: '',
       });
       
-      // Only navigate on successful login
+      // Navigate to seller dashboard
       navigate('/seller/dashboard');
     } catch (err) {
-      // Show error message without re-rendering
-      const errorElement = document.querySelector('.error-message');
-      if (errorElement) {
-        errorElement.textContent = 'Wrong email or password';
-        errorElement.style.display = 'block';
-      } else {
-        const newErrorElement = document.createElement('div');
-        newErrorElement.className = 'error-message p-3 bg-red-50 border border-red-200 rounded-lg mt-4';
-        newErrorElement.innerHTML = '<p class="text-sm text-red-600 text-center">Wrong email or password</p>';
-        
-        // Insert after the submit button
-        const submitButton = document.querySelector('button[type="submit"]');
-        submitButton.parentNode.insertBefore(newErrorElement, submitButton.nextSibling);
-      }
-      
-      showToast('Wrong email or password', 'error');
+      const errorMessage = getErrorMessage(err);
+      setSubmitError(errorMessage);
+      showToast(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -172,14 +162,14 @@ const Login = () => {
               </div>
 
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
-                Welcome to <span className="text-[#F3703A]">Seller Dashboard</span>
+                Join <span className="text-[#F3703A]">EZI Property</span> as a Seller
               </h1>
               <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
-                Access your property listings, manage inquiries, and grow your business with our comprehensive seller tools.
+                Create your seller account to list properties, manage inquiries, and grow your real estate business with our comprehensive platform.
               </p>
             </motion.div>
 
-            {/* Right Side - Login Form */}
+            {/* Right Side - Registration Form */}
             <motion.div
               className="w-full lg:w-1/2 max-w-md"
               initial={{ opacity: 0, x: 20 }}
@@ -187,9 +177,32 @@ const Login = () => {
               transition={{ duration: 0.6 }}
             >
               <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Seller Login</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Seller Registration</h2>
                 
                 <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+                  {/* Name Field */}
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                      Full Name
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#F3703A] focus:border-transparent ${
+                          errors.name ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter your full name"
+                        required
+                      />
+                    </div>
+                    {renderFieldError('name')}
+                  </div>
+
                   {/* Email Field */}
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -213,6 +226,29 @@ const Login = () => {
                     {renderFieldError('email')}
                   </div>
 
+                  {/* Phone Field */}
+                  <div>
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone Number
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        type="tel"
+                        id="phone"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#F3703A] focus:border-transparent ${
+                          errors.phone ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter your phone number"
+                        required
+                      />
+                    </div>
+                    {renderFieldError('phone')}
+                  </div>
+
                   {/* Password Field */}
                   <div>
                     <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
@@ -229,7 +265,7 @@ const Login = () => {
                         className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-[#F3703A] focus:border-transparent ${
                           errors.password ? 'border-red-500' : 'border-gray-300'
                         }`}
-                        placeholder="Enter your password"
+                        placeholder="Create a password"
                       />
                       <button
                         type="button"
@@ -246,26 +282,37 @@ const Login = () => {
                     {renderFieldError('password')}
                   </div>
 
-                  {/* Remember Me */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
+                  {/* Confirm Password Field */}
+                  <div>
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                      Confirm Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                       <input
-                        type="checkbox"
-                        id="rememberMe"
-                        checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
-                        className="h-4 w-4 text-[#F3703A] focus:ring-[#F3703A] border-gray-300 rounded"
+                        type={showConfirmPassword ? "text" : "password"}
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-[#F3703A] focus:border-transparent ${
+                          errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="Confirm your password"
                       />
-                      <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
-                        Remember me
-                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
                     </div>
-                    <Link
-                      to="/forgot-password"
-                      className="text-sm font-medium text-[#F3703A] hover:text-[#E65A2A] cursor-pointer hover:underline relative "
-                    >
-                      Forgot password?
-                    </Link>
+                    {renderFieldError('confirmPassword')}
                   </div>
 
                   {/* Submit Button */}
@@ -277,28 +324,35 @@ const Login = () => {
                     {isLoading ? (
                       <>
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>Signing in...</span>
+                        <span>Creating account...</span>
                       </>
                     ) : (
                       <>
-                        <span>Sign in</span>
+                        <span>Create account</span>
                         <ArrowRight className="w-5 h-5" />
                       </>
                     )}
                   </button>
 
-                  {/* Error message will be inserted here by JavaScript */}
+                  {/* Error Message */}
+                  {submitError && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-sm text-red-600 text-center">
+                        {submitError}
+                      </p>
+                    </div>
+                  )}
                 </form>
 
-                {/* Registration Link */}
+                {/* Login Link */}
                 <div className="mt-6 text-center">
                   <p className="text-sm text-gray-600">
-                    Don't have an account?{' '}
+                    Already have an account?{' '}
                     <Link
-                      to="/register"
+                      to="/seller/login"
                       className="font-medium text-[#F3703A] hover:text-[#E65A2A] cursor-pointer relative hover:underline"
                     >
-                      Register here
+                      Sign in
                     </Link>
                   </p>
                 </div>
@@ -311,4 +365,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default SellerRegister; 

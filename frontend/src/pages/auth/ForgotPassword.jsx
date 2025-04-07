@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Mail, ArrowRight } from 'lucide-react';
+import { Mail, ArrowRight, ArrowLeft } from 'lucide-react';
 import Spinner from "../../components/common/Spinner";
+import whiteLogo from '../../assets/images/white_logo_with_text.png';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -30,14 +31,14 @@ const ForgotPassword = () => {
   return (
     <>
       {isLoading && <Spinner />}
-      <section className="h-screen bg-gradient-to-b from-gray-50 to-white relative overflow-hidden flex items-center">
+      <section className="min-h-screen bg-gradient-to-b from-gray-50 to-white relative overflow-hidden flex items-center">
         {/* Brand Logo */}
         <div className="absolute top-8 left-8 lg:left-24 z-10">
           <Link 
             to="/"
-            className="text-2xl font-bold text-[#F3703A] hover:text-[#E65A2A] transition-colors duration-300 cursor-pointer"
+            className="block hover:opacity-90 transition-all duration-300"
           >
-            EZI Property
+            <img src={whiteLogo} alt="EZI Property" className="h-8" />
           </Link>
         </div>
 
@@ -80,7 +81,7 @@ const ForgotPassword = () => {
                       Password reset instructions have been sent to your email.
                     </div>
                     <Link
-                      to="/login"
+                      to="/seller/login"
                       className="relative cursor-pointer inline-flex items-center gap-2 text-[#F3703A] hover:text-[#E65A2A] transition-colors duration-300"
                     >
                       Back to Login
@@ -128,9 +129,9 @@ const ForgotPassword = () => {
                     {/* Back to Login Link */}
                     <p className="text-center text-sm text-gray-600">
                       Remember your password?{' '}
-                      <Link 
-                        to="/login" 
-                        className="relative hover:underline font-medium text-[#F3703A] hover:text-[#E65A2A] transition-colors duration-300 cursor-pointer"
+                      <Link
+                        to="/seller/login"
+                        className="font-medium text-[#F3703A] hover:text-[#E65A2A] cursor-pointer relative hover:underline"
                       >
                         Back to login
                       </Link>

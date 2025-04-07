@@ -1,16 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Shield } from 'lucide-react';
 import Spinner from "../../components/common/Spinner";
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { getErrorMessage, validateEmail } from '../../utils/errorHandler';
 import whiteLogo from '../../assets/images/white_logo_with_text.png';
 
-const Login = () => {
+const AdminLogin = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { adminLogin } = useAuth();
   const { showToast } = useToast();
   const [formData, setFormData] = useState({
     email: '',
@@ -21,6 +21,21 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
+
+  // Add this useEffect to handle any initialization logging
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('AdminLogin component mounted');
+    }
+  }, []);
+
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    if (rememberedEmail) {
+      setFormData(prev => ({ ...prev, email: rememberedEmail }));
+      setRememberMe(true);
+    }
+  }, []);
 
   const validateField = (name, value) => {
     switch (name) {
@@ -33,7 +48,7 @@ const Login = () => {
     }
   };
 
-  const handleChange = (e) => {
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target;
     
     // Prevent leading spaces for all fields except password
@@ -52,7 +67,9 @@ const Login = () => {
     }));
 
     // Clear submit error when user starts typing
-    if (submitError) setSubmitError('');
+    if (submitError) {
+      setSubmitError('');
+    }
 
     // Validate field
     const error = validateField(name, value);
@@ -60,68 +77,61 @@ const Login = () => {
       ...prevErrors,
       [name]: error
     }));
-  };
+  }, [submitError]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    e.stopPropagation();
     
-    // Prevent form submission if already loading
-    if (isLoading) return;
-    
-    setIsLoading(true);
-    setSubmitError('');
-
     // Validate all fields
-    const newErrors = {};
-    Object.keys(formData).forEach(field => {
-      const error = validateField(field, formData[field]);
-      if (error) newErrors[field] = error;
-    });
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      setIsLoading(false);
-      setSubmitError('Please fix the errors before submitting.');
+    const emailError = validateEmail(formData.email);
+    const passwordError = formData.password.trim() === '' ? 'Password is required' : null;
+    
+    if (emailError || passwordError) {
+      setErrors({
+        email: emailError,
+        password: passwordError
+      });
       return;
     }
 
     try {
-      const user = await login(formData.email, formData.password);
+      setIsLoading(true);
+      setErrors({}); // Clear any previous errors
       
-      // Handle remember me functionality
-      if (rememberMe) {
-        localStorage.setItem('rememberedEmail', formData.email);
-      } else {
-        localStorage.removeItem('rememberedEmail');
-      }
+      const result = await adminLogin(formData.email, formData.password);
+      
+      if (result.success) {
+        // Handle remember me functionality
+        if (rememberMe) {
+          localStorage.setItem('rememberedEmail', formData.email);
+        } else {
+          localStorage.removeItem('rememberedEmail');
+        }
 
-      showToast(`Login successful! Welcome back, ${user.name}.`, 'success');
-      // Clear form data after successful login
-      setFormData({
-        email: '',
-        password: ''
-      });
-      
-      // Only navigate on successful login
-      navigate('/seller/dashboard');
-    } catch (err) {
-      // Show error message without re-rendering
-      const errorElement = document.querySelector('.error-message');
-      if (errorElement) {
-        errorElement.textContent = 'Wrong email or password';
-        errorElement.style.display = 'block';
-      } else {
-        const newErrorElement = document.createElement('div');
-        newErrorElement.className = 'error-message p-3 bg-red-50 border border-red-200 rounded-lg mt-4';
-        newErrorElement.innerHTML = '<p class="text-sm text-red-600 text-center">Wrong email or password</p>';
+        showToast('Login successful!', 'success');
+        // Clear form data after successful login
+        setFormData({
+          email: '',
+          password: ''
+        });
         
-        // Insert after the submit button
-        const submitButton = document.querySelector('button[type="submit"]');
-        submitButton.parentNode.insertBefore(newErrorElement, submitButton.nextSibling);
+        // Only navigate on successful login
+        navigate('/admin/dashboard');
+      } else {
+        // Set form errors for invalid credentials
+        setErrors({
+          email: 'Invalid email or password',
+          password: 'Invalid email or password'
+        });
+        showToast(result.message, 'error');
       }
-      
-      showToast('Wrong email or password', 'error');
+    } catch (error) {
+      // Set form errors for invalid credentials
+      setErrors({
+        email: 'Invalid email or password',
+        password: 'Invalid email or password'
+      });
+      showToast(error.message || 'Login failed. Please try again.', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -168,15 +178,27 @@ const Login = () => {
             >
               <div className="inline-flex items-center gap-2 bg-[#F3703A]/5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-4 sm:mb-6">
                 <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-[#F3703A] rounded-full animate-pulse" />
-                <span className="text-[#F3703A] text-xs sm:text-sm font-medium tracking-wider uppercase">Seller Portal</span>
+                <span className="text-[#F3703A] text-xs sm:text-sm font-medium tracking-wider uppercase">Admin Portal</span>
               </div>
 
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
-                Welcome to <span className="text-[#F3703A]">Seller Dashboard</span>
+                Welcome to <span className="text-[#F3703A]">Admin Dashboard</span>
               </h1>
               <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
-                Access your property listings, manage inquiries, and grow your business with our comprehensive seller tools.
+                Access the admin portal to manage properties, users, and system settings.
               </p>
+
+              <div className="space-y-4 sm:space-y-6">
+                <div className="flex items-center gap-3 sm:gap-4 text-gray-600">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#F3703A]/10 flex items-center justify-center">
+                    <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-[#F3703A]" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Secure Access</h3>
+                    <p className="text-sm text-gray-600">Protected admin portal with enhanced security</p>
+                  </div>
+                </div>
+              </div>
             </motion.div>
 
             {/* Right Side - Login Form */}
@@ -187,9 +209,9 @@ const Login = () => {
               transition={{ duration: 0.6 }}
             >
               <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Seller Login</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Admin Login</h2>
                 
-                <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+                <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Email Field */}
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -262,7 +284,7 @@ const Login = () => {
                     </div>
                     <Link
                       to="/forgot-password"
-                      className="text-sm font-medium text-[#F3703A] hover:text-[#E65A2A] cursor-pointer hover:underline relative "
+                      className="text-sm font-medium text-[#F3703A] hover:text-[#E65A2A]"
                     >
                       Forgot password?
                     </Link>
@@ -287,21 +309,13 @@ const Login = () => {
                     )}
                   </button>
 
-                  {/* Error message will be inserted here by JavaScript */}
+                  {/* Error Message */}
+                  {submitError && (
+                    <p className="text-sm text-red-600 text-center">
+                      {submitError}
+                    </p>
+                  )}
                 </form>
-
-                {/* Registration Link */}
-                <div className="mt-6 text-center">
-                  <p className="text-sm text-gray-600">
-                    Don't have an account?{' '}
-                    <Link
-                      to="/register"
-                      className="font-medium text-[#F3703A] hover:text-[#E65A2A] cursor-pointer relative hover:underline"
-                    >
-                      Register here
-                    </Link>
-                  </p>
-                </div>
               </div>
             </motion.div>
           </div>
@@ -311,4 +325,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default AdminLogin; 

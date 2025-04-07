@@ -1,7 +1,9 @@
-const express = require('express');
+import express from 'express';
+import User from '../models/User.js';
+import { auth, checkRole } from '../middleware/auth.js';
+import Property from '../models/Property.js';
+
 const router = express.Router();
-const User = require('../models/User');
-const { auth, checkRole } = require('../middleware/auth');
 
 // Get all users (admin only)
 router.get('/', auth, checkRole(['admin']), async (req, res) => {
@@ -88,4 +90,4 @@ router.get('/:id/properties', auth, async (req, res) => {
   }
 });
 
-module.exports = router; 
+export default router;

@@ -3,7 +3,7 @@ import { getErrorMessage } from '../utils/errorHandler';
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -27,7 +27,7 @@ api.interceptors.request.use((config) => {
 export const auth = {
   login: async (email, password) => {
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.post('/auth/seller/login', { email, password });
       return response.data;
     } catch (error) {
       throw {
@@ -105,7 +105,7 @@ export const users = {
   },
 };
 
-// Error handling interceptor
+// Add response interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -124,24 +124,42 @@ api.interceptors.response.use(
     // Handle specific status codes
     switch (error.response.status) {
       case 401:
-        // Handle unauthorized access
-        auth.logout();
-        window.location.href = '/login';
+        // Check if it's a login attempt
+        const isLoginAttempt = error.config.url.includes('/auth/seller/login') || 
+                             error.config.url.includes('/auth/admin/login');
+        
+        if (isLoginAttempt) {
+          // For login attempts, return a consistent error message
+          return Promise.reject({
+            status: 401,
+            message: 'Invalid email or password'
+          });
+        }
+        
+        // For other 401 errors (session expired), clear auth and redirect
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        const isAdminRoute = window.location.pathname.startsWith('/admin');
+        window.location.href = isAdminRoute ? '/admin/login' : '/seller/login';
         return Promise.reject({
           message: 'Your session has expired. Please log in again.'
         });
+
       case 403:
         return Promise.reject({
           message: 'You do not have permission to perform this action.'
         });
+
       case 429:
         return Promise.reject({
           message: 'Too many requests. Please wait a moment and try again.'
         });
+
       case 500:
         return Promise.reject({
           message: 'Server error. Please try again later.'
         });
+
       default:
         return Promise.reject({
           message: getErrorMessage(error)

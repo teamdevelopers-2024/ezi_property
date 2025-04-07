@@ -10,7 +10,7 @@ const RoleRoute = ({ children, roles }) => {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/seller/login" replace />;
   }
 
   if (!roles.includes(user.role)) {
