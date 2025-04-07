@@ -58,7 +58,13 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       setIsLoading(true);
-      const response = await api.post('/auth/seller/login', { email, password });
+      // Format the request data properly
+      const requestData = {
+        email: email.trim(),
+        password: password
+      };
+      
+      const response = await api.post('/auth/seller/login', requestData);
       
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
@@ -89,7 +95,13 @@ export const AuthProvider = ({ children }) => {
   const adminLogin = async (email, password) => {
     try {
       setIsLoading(true);
-      const response = await api.post('/auth/admin/login', { email, password });
+      // Format the request data properly
+      const requestData = {
+        email: email.trim(),
+        password: password
+      };
+      
+      const response = await api.post('/auth/admin/login', requestData);
       
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
@@ -119,7 +131,17 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const response = await api.post('/auth/register', { ...userData, role: 'seller' });
+      // Format the registration data properly
+      const requestData = {
+        name: userData.name.trim(),
+        email: userData.email.trim(),
+        password: userData.password,
+        confirmPassword: userData.password,
+        phone: userData.phone.trim(),
+        role: 'seller'  // Ensure role is set to seller
+      };
+      
+      const response = await api.post('/auth/register', requestData);
       const { token, user } = response.data;
       
       localStorage.setItem('token', token);
