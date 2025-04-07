@@ -1,95 +1,101 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { motion } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Eye, EyeOff, Shield } from 'lucide-react';
+import { motion } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Shield } from "lucide-react";
 import Spinner from "../../components/common/Spinner";
-import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../../contexts/ToastContext';
-import { getErrorMessage, validateEmail } from '../../utils/errorHandler';
-import whiteLogo from '../../assets/images/white_logo_with_text.png';
+import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../contexts/ToastContext";
+import { getErrorMessage, validateEmail } from "../../utils/errorHandler";
+import whiteLogo from "../../assets/images/white_logo_with_text.png";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const { adminLogin } = useAuth();
   const { showToast } = useToast();
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
-  const [submitError, setSubmitError] = useState('');
+  const [submitError, setSubmitError] = useState("");
 
   // Add this useEffect to handle any initialization logging
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('AdminLogin component mounted');
+    if (process.env.NODE_ENV === "development") {
+      console.log("AdminLogin component mounted");
     }
   }, []);
 
   useEffect(() => {
-    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    const rememberedEmail = localStorage.getItem("rememberedEmail");
     if (rememberedEmail) {
-      setFormData(prev => ({ ...prev, email: rememberedEmail }));
+      setFormData((prev) => ({ ...prev, email: rememberedEmail }));
       setRememberMe(true);
     }
   }, []);
 
   const validateField = (name, value) => {
     switch (name) {
-      case 'email':
+      case "email":
         return validateEmail(value);
-      case 'password':
-        return value.length < 6 ? 'Password must be at least 6 characters' : null;
+      case "password":
+        return value.length < 6
+          ? "Password must be at least 6 characters"
+          : null;
       default:
         return null;
     }
   };
 
-  const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
-    
-    // Prevent leading spaces for all fields except password
-    if (name !== 'password' && value.startsWith(' ')) {
-      return;
-    }
+  const handleChange = useCallback(
+    (e) => {
+      const { name, value } = e.target;
 
-    // Handle email validation - no spaces allowed
-    if (name === 'email' && value.includes(' ')) {
-      return;
-    }
+      // Prevent leading spaces for all fields except password
+      if (name !== "password" && value.startsWith(" ")) {
+        return;
+      }
 
-    setFormData(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
+      // Handle email validation - no spaces allowed
+      if (name === "email" && value.includes(" ")) {
+        return;
+      }
 
-    // Clear submit error when user starts typing
-    if (submitError) {
-      setSubmitError('');
-    }
+      setFormData((prevState) => ({
+        ...prevState,
+        [name]: value,
+      }));
 
-    // Validate field
-    const error = validateField(name, value);
-    setErrors(prevErrors => ({
-      ...prevErrors,
-      [name]: error
-    }));
-  }, [submitError]);
+      // Clear submit error when user starts typing
+      if (submitError) {
+        setSubmitError("");
+      }
+
+      // Validate field
+      const error = validateField(name, value);
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        [name]: error,
+      }));
+    },
+    [submitError]
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate all fields
     const emailError = validateEmail(formData.email);
-    const passwordError = formData.password.trim() === '' ? 'Password is required' : null;
-    
+    const passwordError =
+      formData.password.trim() === "" ? "Password is required" : null;
+
     if (emailError || passwordError) {
       setErrors({
         email: emailError,
-        password: passwordError
+        password: passwordError,
       });
       return;
     }
@@ -97,51 +103,51 @@ const AdminLogin = () => {
     try {
       setIsLoading(true);
       setErrors({}); // Clear any previous errors
-      
+      setTimeout(async () => {}, 3000);
       const result = await adminLogin(formData.email, formData.password);
-      
+
       if (result.success) {
         // Handle remember me functionality
         if (rememberMe) {
-          localStorage.setItem('rememberedEmail', formData.email);
+          localStorage.setItem("rememberedEmail", formData.email);
         } else {
-          localStorage.removeItem('rememberedEmail');
+          localStorage.removeItem("rememberedEmail");
         }
 
-        showToast('Login successful!', 'success');
+        showToast("Login successful!", "success");
         // Clear form data after successful login
         setFormData({
-          email: '',
-          password: ''
+          email: "",
+          password: "",
         });
-        
+
         // Only navigate on successful login
-        navigate('/admin/dashboard');
+        navigate("/admin/dashboard");
       } else {
         // Set form errors for invalid credentials
         setErrors({
-          email: 'Invalid email or password',
-          password: 'Invalid email or password'
+          email: "Invalid email or password",
+          password: "Invalid email or password",
         });
-        showToast(result.message, 'error');
+        showToast(result.message, "error");
       }
     } catch (error) {
       // Set form errors for invalid credentials
       setErrors({
-        email: 'Invalid email or password',
-        password: 'Invalid email or password'
+        email: "Invalid email or password",
+        password: "Invalid email or password",
       });
-      showToast(error.message || 'Login failed. Please try again.', 'error');
+      showToast(error.message,+'afd' || "Login failed. Please try again.", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
   const renderFieldError = (fieldName) => {
-    return errors[fieldName] && (
-      <p className="mt-1 text-sm text-red-600">
-        {errors[fieldName]}
-      </p>
+    return (
+      errors[fieldName] && (
+        <p className="mt-1 text-sm text-red-600">{errors[fieldName]}</p>
+      )
     );
   };
 
@@ -151,7 +157,7 @@ const AdminLogin = () => {
       <section className="min-h-screen bg-gradient-to-b from-gray-50 to-white relative overflow-hidden flex items-center">
         {/* Brand Logo */}
         <div className="absolute top-4 sm:top-8 left-4 sm:left-8 lg:left-24 z-10">
-          <Link 
+          <Link
             to="/"
             className="block hover:opacity-90 transition-all duration-300"
           >
@@ -161,10 +167,14 @@ const AdminLogin = () => {
 
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-30">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(0,0,0,0.05) 1px, transparent 0)',
-            backgroundSize: '40px 40px'
-          }} />
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 2px 2px, rgba(0,0,0,0.05) 1px, transparent 0)",
+              backgroundSize: "40px 40px",
+            }}
+          />
         </div>
 
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-24 w-full py-8 sm:py-12">
@@ -178,14 +188,18 @@ const AdminLogin = () => {
             >
               <div className="inline-flex items-center gap-2 bg-[#F3703A]/5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-4 sm:mb-6">
                 <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-[#F3703A] rounded-full animate-pulse" />
-                <span className="text-[#F3703A] text-xs sm:text-sm font-medium tracking-wider uppercase">Admin Portal</span>
+                <span className="text-[#F3703A] text-xs sm:text-sm font-medium tracking-wider uppercase">
+                  Admin Portal
+                </span>
               </div>
 
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
-                Welcome to <span className="text-[#F3703A]">Admin Dashboard</span>
+                Welcome to{" "}
+                <span className="text-[#F3703A]">Admin Dashboard</span>
               </h1>
               <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
-                Access the admin portal to manage properties, users, and system settings.
+                Access the admin portal to manage properties, users, and system
+                settings.
               </p>
 
               <div className="space-y-4 sm:space-y-6">
@@ -194,8 +208,12 @@ const AdminLogin = () => {
                     <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-[#F3703A]" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Secure Access</h3>
-                    <p className="text-sm text-gray-600">Protected admin portal with enhanced security</p>
+                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base">
+                      Secure Access
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Protected admin portal with enhanced security
+                    </p>
                   </div>
                 </div>
               </div>
@@ -209,12 +227,17 @@ const AdminLogin = () => {
               transition={{ duration: 0.6 }}
             >
               <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Admin Login</h2>
-                
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  Admin Login
+                </h2>
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Email Field */}
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Email Address
                     </label>
                     <div className="relative">
@@ -226,18 +249,21 @@ const AdminLogin = () => {
                         value={formData.email}
                         onChange={handleChange}
                         className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#F3703A] focus:border-transparent ${
-                          errors.email ? 'border-red-500' : 'border-gray-300'
+                          errors.email ? "border-red-500" : "border-gray-300"
                         }`}
                         placeholder="Enter your email"
                         required
                       />
                     </div>
-                    {renderFieldError('email')}
+                    {renderFieldError("email")}
                   </div>
 
                   {/* Password Field */}
                   <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="password"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Password
                     </label>
                     <div className="relative">
@@ -249,7 +275,7 @@ const AdminLogin = () => {
                         value={formData.password}
                         onChange={handleChange}
                         className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-[#F3703A] focus:border-transparent ${
-                          errors.password ? 'border-red-500' : 'border-gray-300'
+                          errors.password ? "border-red-500" : "border-gray-300"
                         }`}
                         placeholder="Enter your password"
                       />
@@ -265,7 +291,7 @@ const AdminLogin = () => {
                         )}
                       </button>
                     </div>
-                    {renderFieldError('password')}
+                    {renderFieldError("password")}
                   </div>
 
                   {/* Remember Me */}
@@ -278,7 +304,10 @@ const AdminLogin = () => {
                         onChange={(e) => setRememberMe(e.target.checked)}
                         className="h-4 w-4 text-[#F3703A] focus:ring-[#F3703A] border-gray-300 rounded"
                       />
-                      <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
+                      <label
+                        htmlFor="rememberMe"
+                        className="ml-2 block text-sm text-gray-700"
+                      >
                         Remember me
                       </label>
                     </div>
@@ -325,4 +354,4 @@ const AdminLogin = () => {
   );
 };
 
-export default AdminLogin; 
+export default AdminLogin;
