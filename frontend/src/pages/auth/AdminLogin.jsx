@@ -37,6 +37,10 @@ const AdminLogin = () => {
     }
   }, []);
 
+  useEffect(()=>{
+
+  },[])
+
   const validateField = (name, value) => {
     switch (name) {
       case "email":
