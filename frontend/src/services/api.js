@@ -28,11 +28,14 @@ export const auth = {
   login: async (email, password) => {
     try {
       const response = await api.post('/auth/seller/login', { email, password });
-      return response.data;
-    } catch (error) {
-      throw {
-        message: error.response?.data?.message || 'Login failed. Please try again.'
+      return {
+        success: true,
+        token: response.data.token,
+        user: response.data.user
       };
+    } catch (error) {
+      // Let the response interceptor handle the error
+      return Promise.reject(error);
     }
   },
   register: async (userData) => {
@@ -83,6 +86,26 @@ export const properties = {
     const response = await api.delete(`/properties/${id}`);
     return response.data;
   },
+  getPending: async () => {
+    try {
+      const response = await api.get('/properties/pending');
+      return response.data;
+    } catch (error) {
+      throw {
+        message: error.response?.data?.message || 'Failed to fetch pending properties'
+      };
+    }
+  },
+  updateStatus: async (propertyId, status) => {
+    try {
+      const response = await api.patch(`/properties/${propertyId}/status`, { status });
+      return response.data;
+    } catch (error) {
+      throw {
+        message: error.response?.data?.message || 'Failed to update property status'
+      };
+    }
+  }
 };
 
 // User APIs
@@ -105,19 +128,44 @@ export const users = {
   },
 };
 
+// Admin APIs
+export const admin = {
+  getSellerRegistrations: async () => {
+    try {
+      const response = await api.get('/admin/seller-registrations');
+      return response.data;
+    } catch (error) {
+      throw {
+        message: error.response?.data?.message || 'Failed to fetch seller registrations'
+      };
+    }
+  },
+
+  updateSellerRegistration: async (userId, action, rejectionReason) => {
+    try {
+      const response = await api.patch(`/admin/seller-registrations/${userId}`, {
+        action,
+        rejectionReason
+      });
+      return response.data;
+    } catch (error) {
+      throw {
+        message: error.response?.data?.message || 'Failed to update seller registration'
+      };
+    }
+  }
+};
+
 // Add response interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.log('Response interceptor error:', error);
+    
     // Handle network errors
     if (!error.response) {
-      if (error.code === 'ECONNABORTED') {
-        return Promise.reject({
-          message: 'Request timed out. Please check your connection and try again.'
-        });
-      }
       return Promise.reject({
-        message: 'Network error. Please check your internet connection.'
+        message: 'Unable to connect to the server. Please check your internet connection.'
       });
     }
 
@@ -129,10 +177,21 @@ api.interceptors.response.use(
                              error.config.url.includes('/auth/admin/login');
         
         if (isLoginAttempt) {
-          // For login attempts, return a consistent error message
+          const errorMessage = error.response.data?.message?.toLowerCase() || '';
+          
+          // Check for specific error messages
+          if (errorMessage.includes('user not found') || 
+              errorMessage.includes('no user') || 
+              errorMessage.includes('not found') ||
+              errorMessage.includes('does not exist')) {
+            return Promise.reject({
+              message: 'User does not exist with this email address'
+            });
+          }
+          
+          // For password errors
           return Promise.reject({
-            status: 401,
-            message: 'Invalid email or password'
+            message: 'Email or password is incorrect'
           });
         }
         
@@ -147,7 +206,18 @@ api.interceptors.response.use(
 
       case 403:
         return Promise.reject({
-          message: 'You do not have permission to perform this action.'
+          message: error.response.data?.message || 'You do not have permission to perform this action.'
+        });
+
+      case 404:
+        // For login attempts, treat 404 as user not found
+        if (error.config.url.includes('/auth/seller/login')) {
+          return Promise.reject({
+            message: 'User does not exist with this email address'
+          });
+        }
+        return Promise.reject({
+          message: error.response.data?.message || 'Resource not found.'
         });
 
       case 429:
@@ -162,7 +232,7 @@ api.interceptors.response.use(
 
       default:
         return Promise.reject({
-          message: getErrorMessage(error)
+          message: error.response.data?.message || 'An unexpected error occurred. Please try again.'
         });
     }
   }

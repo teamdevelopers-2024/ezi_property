@@ -19,6 +19,8 @@ import AdminUsers from "../pages/admin/AdminUsers";
 import AdminSettings from "../pages/admin/AdminSettings";
 import FeaturedProperties from '../pages/admin/FeaturedProperties';
 import SellerPerformance from '../pages/admin/SellerPerformance';
+import VerifySellers from '../pages/admin/VerifySellers';
+import PendingProperties from '../pages/admin/PendingProperties';
 
 // Seller Pages
 import SellerDashboard from "../pages/seller/Dashboard";
@@ -171,6 +173,22 @@ function LayoutRoutes() {
           element={
             <ProtectedRoute roles={["admin"]}>
               <SellerPerformance />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/sellers/verify"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <VerifySellers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/properties/pending"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <PendingProperties />
             </ProtectedRoute>
           }
         />

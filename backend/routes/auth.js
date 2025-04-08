@@ -143,15 +143,23 @@ router.post('/seller/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Check password first
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
     // Verify user is a seller
     if (user.role !== 'seller') {
       return res.status(403).json({ message: 'Access denied. Seller account required.' });
     }
 
-    // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+    // Check if seller is approved
+    if (!user.isApproved || user.registrationStatus !== 'approved') {
+      return res.status(403).json({ 
+        message: 'Your account is pending approval. Please wait for admin approval.',
+        status: user.registrationStatus
+      });
     }
 
     // Generate token
