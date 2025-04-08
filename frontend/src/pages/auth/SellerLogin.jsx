@@ -27,7 +27,7 @@ const SellerLogin = () => {
       case 'email':
         return validateEmail(value);
       case 'password':
-        return value.trim() === '' ? 'Password is required' : null;
+        return value.length < 6 ? 'Password must be at least 6 characters' : null;
       default:
         return null;
     }
@@ -64,43 +64,64 @@ const SellerLogin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    e.stopPropagation();
+
+    if (isLoading) return;
+
+    setIsLoading(true);
+    setSubmitError('');
+    setErrors({}); // Clear previous errors
+
     // Validate all fields
-    const emailError = validateEmail(formData.email);
-    const passwordError = formData.password.trim() === '' ? 'Password is required' : null;
-    
-    if (emailError || passwordError) {
-      setErrors({
-        email: emailError,
-        password: passwordError
-      });
+    const newErrors = {};
+    Object.keys(formData).forEach(field => {
+      const error = validateField(field, formData[field]);
+      if (error) newErrors[field] = error;
+    });
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setIsLoading(false);
+      setSubmitError('Please fix the errors before submitting.');
       return;
     }
 
     try {
-      setIsLoading(true);
-      setErrors({}); // Clear any previous errors
-      
       const result = await login(formData.email, formData.password);
       
-      if (result.success) {
-        showToast('Login successful!', 'success');
-        navigate('/seller/dashboard');
-      } else {
-        // Set form errors for invalid credentials
-        setErrors({
-          email: 'Invalid email or password',
-          password: 'Invalid email or password'
-        });
-        showToast(result.message, 'error');
+      if (!result.success) {
+        // Handle different error types
+        if (result.message.toLowerCase().includes('user does not exist')) {
+          setErrors({ email: 'User does not exist with this email address' });
+          showToast('User does not exist with this email address', 'error');
+        } else if (result.message.toLowerCase().includes('email or password is incorrect')) {
+          setErrors({ password: 'Email or password is incorrect' });
+          showToast('Email or password is incorrect', 'error');
+        } else if (result.message.toLowerCase().includes('pending approval')) {
+          showToast(result.message, 'warning', 6000);
+        } else if (result.message.toLowerCase().includes('blocked') || 
+                   result.message.toLowerCase().includes('suspended')) {
+          showToast(result.message, 'error', 6000);
+        } else if (result.message.toLowerCase().includes('unable to connect')) {
+          showToast(result.message, 'error', 6000);
+        } else {
+          showToast(result.message, 'error');
+        }
+        
+        setSubmitError(result.message);
+        return;
       }
+
+      showToast('Login successful!', 'success');
+      navigate('/seller/dashboard');
     } catch (error) {
-      // Set form errors for invalid credentials
-      setErrors({
-        email: 'Invalid email or password',
-        password: 'Invalid email or password'
+      const errorMessage = error.message || 'An unexpected error occurred. Please try again.';
+      console.error('Login submission error:', {
+        message: error.message,
+        stack: error.stack
       });
-      showToast(error.message || 'Login failed. Please try again.', 'error');
+      setSubmitError(errorMessage);
+      showToast(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -169,6 +190,13 @@ const SellerLogin = () => {
                 <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Seller Login</h2>
                 
                 <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+                  {/* Show submit error at the top of the form */}
+                  {submitError && (
+                    <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm">
+                      {submitError}
+                    </div>
+                  )}
+
                   {/* Email Field */}
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -182,14 +210,15 @@ const SellerLogin = () => {
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
-                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#F3703A] focus:border-transparent ${
-                          errors.email ? 'border-red-500' : 'border-gray-300'
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg outline-none transition-colors ${
+                          errors.email 
+                            ? 'border-red-500 focus:border-red-500' 
+                            : 'border-gray-300 focus:border-[#F3703A] focus:border-2'
                         }`}
                         placeholder="Enter your email"
                         required
                       />
                     </div>
-                    {renderFieldError('email')}
                   </div>
 
                   {/* Password Field */}
@@ -205,8 +234,10 @@ const SellerLogin = () => {
                         name="password"
                         value={formData.password}
                         onChange={handleChange}
-                        className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-[#F3703A] focus:border-transparent ${
-                          errors.password ? 'border-red-500' : 'border-gray-300'
+                        className={`w-full pl-10 pr-10 py-2 border rounded-lg outline-none transition-colors ${
+                          errors.password 
+                            ? 'border-red-500 focus:border-red-500' 
+                            : 'border-gray-300 focus:border-[#F3703A] focus:border-2'
                         }`}
                         placeholder="Enter your password"
                       />
@@ -222,18 +253,22 @@ const SellerLogin = () => {
                         )}
                       </button>
                     </div>
-                    {renderFieldError('password')}
+                    {errors.password && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.password}
+                      </p>
+                    )}
                   </div>
 
                   {/* Remember Me */}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center">
+                    <div className="flex items-center relative">
                       <input
                         type="checkbox"
                         id="rememberMe"
                         checked={rememberMe}
                         onChange={(e) => setRememberMe(e.target.checked)}
-                        className="h-4 w-4 text-[#F3703A] focus:ring-[#F3703A] border-gray-300 rounded"
+                        className="h-4 w-4 rounded border-gray-300 text-[#F3703A] focus:ring-[#F3703A] cursor-pointer accent-[#F3703A]"
                       />
                       <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
                         Remember me
@@ -265,8 +300,6 @@ const SellerLogin = () => {
                       </>
                     )}
                   </button>
-
-                  {/* Error message will be inserted here by JavaScript */}
                 </form>
 
                 {/* Registration Link */}
