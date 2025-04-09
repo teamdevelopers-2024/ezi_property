@@ -4,11 +4,35 @@ import { auth } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get all pending seller registrations
-router.get('/seller-registrations', auth, async (req, res) => {
+// Get all users (sellers, buyers, etc.)
+router.get('/users', auth, async (req, res) => {
   try {
     // Verify admin role
     if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+
+    // Fetch all users, excluding passwords
+    // You might want to add pagination here for large user bases
+    const users = await User.find({}).select('-password');
+
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching all users:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch users',
+      error: error.message 
+    });
+  }
+});
+
+// Get all pending seller registrations
+router.get('/seller-registrations', auth, async (req, res) => {
+  console.log('[Route /seller-registrations] req.user received:', req.user);
+  try {
+    // Verify admin role
+    if (req.user.role !== 'admin') {
+      console.log(`[Route /seller-registrations] Role check failed. Expected 'admin', got '${req.user.role}'`);
       return res.status(403).json({ message: 'Access denied. Admin only.' });
     }
 

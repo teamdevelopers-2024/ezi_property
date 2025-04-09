@@ -2,6 +2,7 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import ErrorBoundary from "../components/ErrorBoundary";
 import { useAuth } from "../contexts/AuthContext";
+import AdminLayout from "../layouts/AdminLayout";
 
 // Auth Pages
 import SellerLogin from "../pages/auth/SellerLogin";
@@ -21,6 +22,7 @@ import FeaturedProperties from '../pages/admin/FeaturedProperties';
 import SellerPerformance from '../pages/admin/SellerPerformance';
 import VerifySellers from '../pages/admin/VerifySellers';
 import PendingProperties from '../pages/admin/PendingProperties';
+import AdminProfile from "../pages/admin/AdminProfile";
 
 // Seller Pages
 import SellerDashboard from "../pages/seller/Dashboard";
@@ -103,95 +105,30 @@ function LayoutRoutes() {
         <Route path="/seller/register" element={<SellerRegister />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* Admin Routes */}
-        <Route
-          path="/admin/dashboard"
-          element={
-            <ProtectedRoute roles={["admin"]}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/reports"
-          element={
-            <ProtectedRoute roles={["admin"]}>
-              <Reports />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/properties"
-          element={
-            <ProtectedRoute roles={["admin"]}>
-              <PropertyList />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/properties/add"
-          element={
-            <ProtectedRoute roles={["admin"]}>
-              <AddProperty />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/properties/edit/:id"
-          element={
-            <ProtectedRoute roles={["admin"]}>
-              <EditProperty />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/users"
-          element={
-            <ProtectedRoute roles={["admin"]}>
-              <AdminUsers />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/settings"
-          element={
-            <ProtectedRoute roles={["admin"]}>
-              <AdminSettings />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/featured-properties"
-          element={
-            <ProtectedRoute roles={["admin"]}>
-              <FeaturedProperties />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/seller-performance"
-          element={
-            <ProtectedRoute roles={["admin"]}>
-              <SellerPerformance />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/sellers/verify"
-          element={
-            <ProtectedRoute roles={["admin"]}>
-              <VerifySellers />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/properties/pending"
-          element={
-            <ProtectedRoute roles={["admin"]}>
-              <PendingProperties />
-            </ProtectedRoute>
-          }
-        />
+        {/* Admin Routes - Now nested under AdminLayout */}
+        <Route 
+            path="/admin" 
+            element={
+                <ProtectedRoute roles={["admin"]}>
+                    <AdminLayout />
+                </ProtectedRoute>
+            }
+        >
+            {/* Redirect /admin to /admin/dashboard */}
+            <Route index element={<Navigate to="dashboard" replace />} /> 
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="properties" element={<PropertyList />} />
+            <Route path="properties/add" element={<AddProperty />} />
+            <Route path="properties/edit/:id" element={<EditProperty />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="settings" element={<AdminSettings />} />
+            <Route path="featured-properties" element={<FeaturedProperties />} />
+            <Route path="seller-performance" element={<SellerPerformance />} />
+            <Route path="verify-sellers" element={<VerifySellers />} /> 
+            <Route path="properties/pending" element={<PendingProperties />} />
+            <Route path="profile" element={<AdminProfile />} /> 
+        </Route>
 
         {/* Seller Routes */}
         <Route

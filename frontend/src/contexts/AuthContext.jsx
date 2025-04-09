@@ -19,50 +19,62 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      checkAuthStatus();
+    const storedUser = localStorage.getItem('user');
+
+    if (token && storedUser) {
+      try {
+        // Set auth header and user state if token/user found in storage
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+         console.error("Error setting initial auth state from localStorage:", error);
+         // Clear potentially corrupted state
+         localStorage.removeItem('token');
+         localStorage.removeItem('user');
+         setUser(null);
+      }
     } else {
-      setIsLoading(false);
+      // Ensure clean state if token or user is missing initially
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
     }
+    setIsLoading(false); // Initial check complete
   }, []);
 
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = () => { // No longer async
+    setIsLoading(true);
     try {
-      // First try to get the user from localStorage
-      const storedUser = localStorage.getItem('user');
-      console.log(storedUser,"this is storedUser")
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-      }
-
-      // Then verify with the server
-      const response = await api.get('/auth/me');
-      console.log(response,"thi is response error")
-      setUser(response.data);
-    } catch (error) {      // Check if we have a token but the auth check failed
       const token = localStorage.getItem('token');
-      if (token) {
-        // If we have a token but the auth check failed, we might be an admin
-        // Let's try to check admin status
+      const storedUser = localStorage.getItem('user');
+
+      if (token && storedUser) {
+        // Verify local storage state and ensure consistency
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         try {
-          const adminResponse = await api.get('/auth/admin/me');
-          const adminUser = adminResponse.data || { role: 'admin' };
-          setUser(adminUser);
-          localStorage.setItem('user', JSON.stringify(adminUser));
-          return;
-        } catch (adminError) {
-          console.log(adminError,"this is adminError")
-          // If admin check also fails, clear the token and user
-          // localStorage.removeItem('token');
-          // localStorage.removeItem('user');
-          delete api.defaults.headers.common['Authorization'];
-          setUser(null);
+           setUser(JSON.parse(storedUser));
+        } catch (parseError) {
+           console.error("Error parsing stored user data during check:", parseError);
+           // Clear inconsistent state
+           localStorage.removeItem('token');
+           localStorage.removeItem('user');
+           delete api.defaults.headers.common['Authorization'];
+           setUser(null);
         }
       } else {
+        // If token or user is missing, ensure logged-out state
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        delete api.defaults.headers.common['Authorization'];
         setUser(null);
       }
+    } catch (error) {
+       console.error("Error in checkAuthStatus:", error);
+       // Ensure clean state on unexpected error
+       localStorage.removeItem('token');
+       localStorage.removeItem('user');
+       delete api.defaults.headers.common['Authorization'];
+       setUser(null);
     } finally {
       setIsLoading(false);
     }

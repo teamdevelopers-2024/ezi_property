@@ -17,10 +17,11 @@ const AdminUsers = () => {
 
   const fetchSellers = async () => {
     try {
-      const response = await api.get('/admin/sellers');
+      const response = await api.get('/admin/users');
       setSellers(response.data);
     } catch (error) {
-      showToast('Failed to fetch sellers', 'error');
+      showToast('Failed to fetch users', 'error');
+      console.error('Error fetching users:', error);
     } finally {
       setLoading(false);
     }
