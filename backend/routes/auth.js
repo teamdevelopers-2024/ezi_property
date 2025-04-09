@@ -19,6 +19,7 @@ router.post('/admin/login', async (req, res) => {
     // Generate token for admin
     const token = jwt.sign(
       { 
+        userId: 'admin',
         email: process.env.ADMIN_EMAIL,
         role: 'admin'
       },
@@ -31,6 +32,7 @@ router.post('/admin/login', async (req, res) => {
       message: 'Admin login successful',
       token,
       user: {
+        id: 'admin',
         email: process.env.ADMIN_EMAIL,
         role: 'admin',
         name: 'Admin'

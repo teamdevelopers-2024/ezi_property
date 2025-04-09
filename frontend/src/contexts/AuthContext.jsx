@@ -25,13 +25,20 @@ export const AuthProvider = ({ children }) => {
       try {
         // Set auth header and user state if token/user found in storage
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        
+        // Verify the user object has required fields
+        if (parsedUser && parsedUser.role && (parsedUser.id || parsedUser.email)) {
+          setUser(parsedUser);
+        } else {
+          throw new Error('Invalid user data in storage');
+        }
       } catch (error) {
-         console.error("Error setting initial auth state from localStorage:", error);
-         // Clear potentially corrupted state
-         localStorage.removeItem('token');
-         localStorage.removeItem('user');
-         setUser(null);
+        console.error("Error setting initial auth state from localStorage:", error);
+        // Clear potentially corrupted state
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
       }
     } else {
       // Ensure clean state if token or user is missing initially
@@ -132,9 +139,18 @@ export const AuthProvider = ({ children }) => {
       const response = await api.post('/auth/admin/login', requestData);
       
       if (response.data.token) {
+        // Create a complete user object with all required fields
+        const userData = {
+          id: response.data.user.id,
+          email: response.data.user.email,
+          name: response.data.user.name,
+          role: response.data.user.role
+        };
+        
+        // Store the authentication data
         localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        setUser(response.data.user);
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
         api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
         return { success: true };
       }
