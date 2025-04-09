@@ -196,12 +196,13 @@ api.interceptors.response.use(
         }
         
         // For other 401 errors (session expired), clear auth and redirect
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        const isAdminRoute = window.location.pathname.startsWith('/admin');
-        window.location.href = isAdminRoute ? '/admin/login' : '/seller/login';
+        // Only clear auth if it's not an admin request
+        if (!error.config.url.includes('/admin/')) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
         return Promise.reject({
-          message: 'Your session has expired. Please log in again.'
+          message: 'Session expired. Please log in again.'
         });
 
       case 403:
