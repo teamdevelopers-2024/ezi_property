@@ -8,13 +8,23 @@ const router = express.Router();
 
 // Admin login route
 router.post('/admin/login', async (req, res) => {
+  console.log('\n=== Admin Login Attempt ===');
+  console.log('Time:', new Date().toISOString());
+  console.log('Request Body:', {
+    email: req.body.email,
+    password: '********' // Hide password in logs
+  });
+  
   try {
     const { email, password } = req.body;
-
+    
     // Verify admin credentials from environment variables
     if (email !== process.env.ADMIN_EMAIL || password !== process.env.ADMIN_PASSWORD) {
+      console.log('Admin login failed: Invalid credentials');
       return res.status(401).json({ message: 'Invalid admin credentials' });
     }
+
+    console.log('Admin credentials verified successfully');
 
     // Generate token for admin
     const token = jwt.sign(
@@ -27,8 +37,10 @@ router.post('/admin/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    console.log('Admin token generated successfully');
+
     // Return success response
-    res.json({
+    const response = {
       message: 'Admin login successful',
       token,
       user: {
@@ -37,10 +49,19 @@ router.post('/admin/login', async (req, res) => {
         role: 'admin',
         name: 'Admin'
       }
-    });
+    };
+
+    console.log('Sending admin login response');
+    console.log('========================\n');
+    
+    res.json(response);
 
   } catch (error) {
-    console.error('Admin login error:', error);
+    console.error('\n=== Admin Login Error ===');
+    console.error('Error:', error);
+    console.error('Stack:', error.stack);
+    console.error('========================\n');
+    
     res.status(500).json({ 
       message: 'Admin login failed',
       error: error.message 

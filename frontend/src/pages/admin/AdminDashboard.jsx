@@ -34,7 +34,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
-import api, { admin } from '../../services/api';
+import api, { admin, properties } from '../../services/api';
 import Spinner from '../../components/common/Spinner';
 
 const StatCard = ({ title, value, icon: Icon, change }) => {
@@ -118,88 +118,118 @@ const ContentPanel = ({ children, className = "", title, viewAllLink }) => (
 const AdminDashboard = () => {
   const { showToast } = useToast();
   const [stats, setStats] = useState({
-    totalProperties: 1250,
-    pendingProperties: 15,
-    totalSellers: 350,
-    pendingSellers: 5,
+    totalProperties: 0,
+    pendingProperties: 0,
+    totalSellers: 0,
+    pendingSellers: 0,
   });
   const [pendingSellersData, setPendingSellersData] = useState([]);
   const [pendingPropertiesData, setPendingPropertiesData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchDashboardData = async () => {
-    console.log("Fetching dashboard stats...");
-    await new Promise(resolve => setTimeout(resolve, 300));
-    setStats({ totalProperties: 1380, pendingProperties: 12, totalSellers: 365, pendingSellers: 8 });
-    console.log("Dashboard stats updated (mock).");
+  const fetchDashboardStats = async () => {
+    try {
+      console.log('[AdminDashboard] Fetching dashboard stats');
+      
+      // Fetch all required data in parallel
+      const [allProperties, pendingProps, allSellers, pendingSellers] = await Promise.all([
+        properties.getAll(),
+        properties.getPending(),
+        admin.getSellerRegistrations(), // This gets all sellers
+        admin.getSellerRegistrations().then(sellers => 
+          sellers.filter(s => s.registrationStatus === 'pending')
+        )
+      ]);
+
+      // Update stats with real data
+      setStats({
+        totalProperties: allProperties.length,
+        pendingProperties: pendingProps.length,
+        totalSellers: allSellers.length,
+        pendingSellers: pendingSellers.length
+      });
+
+      console.log('[AdminDashboard] Stats updated with real data');
+    } catch (error) {
+      console.error('[AdminDashboard] Error fetching stats:', error);
+      showToast('Failed to load dashboard statistics', 'error');
+    }
   };
 
   const fetchPendingSellers = async () => {
     try {
-      const response = await admin.getSellerRegistrations();
-      setPendingSellersData(response);
+      console.log('[AdminDashboard] Fetching pending sellers');
+      const sellers = await admin.getSellerRegistrations();
+      const pendingSellers = sellers.filter(s => s.registrationStatus === 'pending');
+      setPendingSellersData(pendingSellers);
     } catch (error) {
-      console.error('Error fetching pending sellers:', error);
+      console.error('[AdminDashboard] Error fetching pending sellers:', error);
       showToast('Failed to load pending seller registrations', 'error');
-      setPendingSellersData([
-          { id: 's1_err', name: 'Error Loading Seller', email: '-' },
-      ]);
+      setPendingSellersData([]);
     }
   };
 
   const fetchPendingProperties = async () => {
     try {
-      const response = await api.get('/properties/pending');
-      setPendingPropertiesData(response.data);
+      console.log('[AdminDashboard] Fetching pending properties');
+      const pendingProps = await properties.getPending();
+      setPendingPropertiesData(pendingProps);
     } catch (error) {
-      console.error('Error fetching pending properties:', error);
+      console.error('[AdminDashboard] Error fetching pending properties:', error);
       showToast('Failed to load pending properties', 'error');
-      setPendingPropertiesData([
-          { id: 'p1_err', title: 'Error Loading Property', seller: { name: '-' } },
-       ]);
-    }
-  };
-
-  const fetchAllData = async () => {
-    setIsLoading(true);
-    console.log("Fetching all dashboard data...")
-    try {
-      await Promise.all([
-        fetchDashboardData(),
-        fetchPendingSellers(),
-        fetchPendingProperties()
-      ]);
-    } catch (error) {
-      console.error('Error during initial data fetch:', error);
-      showToast('Could not load all dashboard data', 'warning');
-    } finally {
-      setIsLoading(false);
-      console.log("Finished fetching all data.")
+      setPendingPropertiesData([]);
     }
   };
 
   const handleSellerAction = async (sellerId, action) => {
-    console.log(`Attempting to ${action} seller ${sellerId}`);
     try {
+      console.log(`[AdminDashboard] ${action}ing seller ${sellerId}`);
       await admin.updateSellerRegistration(sellerId, action);
-      showToast(`Seller ${action} successful`, 'success');
-      fetchPendingSellers();
-    } catch(error) {
-      console.error(`Error ${action} seller ${sellerId}:`, error);
+      showToast(`Seller ${action}ed successfully`, 'success');
+      
+      // Refresh both the pending sellers list and dashboard stats
+      await Promise.all([
+        fetchPendingSellers(),
+        fetchDashboardStats()
+      ]);
+    } catch (error) {
+      console.error(`[AdminDashboard] Error ${action}ing seller:`, error);
       showToast(`Failed to ${action} seller`, 'error');
     }
   };
 
   const handlePropertyAction = async (propertyId, action) => {
-    console.log(`Attempting to ${action} property ${propertyId}`);
-    const status = action === 'approve' ? 'approved' : 'rejected'; 
     try {
-      await api.patch(`/properties/${propertyId}/status`, { status });
-      showToast(`Property ${action} successful`, 'success');
-      fetchPendingProperties();
-    } catch(error) {
-      console.error(`Error ${action} property ${propertyId}:`, error);
+      console.log(`[AdminDashboard] ${action}ing property ${propertyId}`);
+      await properties.updateStatus(propertyId, action);
+      showToast(`Property ${action}ed successfully`, 'success');
+      
+      // Refresh both the pending properties list and dashboard stats
+      await Promise.all([
+        fetchPendingProperties(),
+        fetchDashboardStats()
+      ]);
+    } catch (error) {
+      console.error(`[AdminDashboard] Error ${action}ing property:`, error);
       showToast(`Failed to ${action} property`, 'error');
+    }
+  };
+
+  const fetchAllData = async () => {
+    setIsLoading(true);
+    console.log("[AdminDashboard] Fetching all dashboard data...");
+    try {
+      await Promise.all([
+        fetchDashboardStats(),
+        fetchPendingSellers(),
+        fetchPendingProperties()
+      ]);
+    } catch (error) {
+      console.error('[AdminDashboard] Error during initial data fetch:', error);
+      showToast('Could not load all dashboard data', 'warning');
+    } finally {
+      setIsLoading(false);
+      console.log("[AdminDashboard] Finished fetching all data.");
     }
   };
 

@@ -62,6 +62,35 @@ export const auth = {
       };
     }
   },
+  adminLogin: async (email, password) => {
+    try {
+      console.log('[API] Attempting admin login with:', { 
+        email,
+        url: '/auth/admin/login',
+        baseURL: api.defaults.baseURL 
+      });
+      const response = await api.post('/auth/admin/login', { email, password });
+      console.log('[API] Admin login response:', {
+        status: response.status,
+        data: response.data
+      });
+      return {
+        success: true,
+        token: response.data.token,
+        user: response.data.user
+      };
+    } catch (error) {
+      console.error('[API] Admin login error:', {
+        status: error.response?.status,
+        message: error.response?.data?.message,
+        error: error.message
+      });
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Admin login failed'
+      };
+    }
+  },
 };
 
 // Property APIs
@@ -135,6 +164,7 @@ export const admin = {
       const response = await api.get('/admin/seller-registrations');
       return response.data;
     } catch (error) {
+      console.log('[API] Seller registrations:', error);
       throw {
         message: error.response?.data?.message || 'Failed to fetch seller registrations'
       };
