@@ -25,38 +25,38 @@ const corsOptions = {
   credentials: true
 };
 
-console.log('Setting up CORS with options:', corsOptions);
+// console.log('Setting up CORS with options:', corsOptions);
 app.use(cors(corsOptions));
 
 // Request logging middleware
-app.use((req, res, next) => {
-  const startTime = Date.now();
+// app.use((req, res, next) => {
+//   const startTime = Date.now();
   
-  // Log request details
-  console.log('\n=== Incoming Request ===');
-  console.log(`Time: ${new Date().toISOString()}`);
-  console.log(`Method: ${req.method}`);
-  console.log(`URL: ${req.url}`);
-  console.log('Headers:', req.headers);
-  console.log('Body:', req.body);
-  console.log('======================\n');
+//   // Log request details
+//   console.log('\n=== Incoming Request ===');
+//   console.log(`Time: ${new Date().toISOString()}`);
+//   console.log(`Method: ${req.method}`);
+//   console.log(`URL: ${req.url}`);
+//   console.log('Headers:', req.headers);
+//   console.log('Body:', req.body);
+//   console.log('======================\n');
 
-  // Intercept response to log it
-  const originalSend = res.send;
-  res.send = function(data) {
-    const responseTime = Date.now() - startTime;
-    console.log('\n=== Outgoing Response ===');
-    console.log(`Time: ${new Date().toISOString()}`);
-    console.log(`Status: ${res.statusCode}`);
-    console.log(`Response Time: ${responseTime}ms`);
-    console.log('Response Data:', data);
-    console.log('========================\n');
+//   // Intercept response to log it
+//   const originalSend = res.send;
+//   res.send = function(data) {
+//     const responseTime = Date.now() - startTime;
+//     console.log('\n=== Outgoing Response ===');
+//     console.log(`Time: ${new Date().toISOString()}`);
+//     console.log(`Status: ${res.statusCode}`);
+//     console.log(`Response Time: ${responseTime}ms`);
+//     console.log('Response Data:', data);
+//     console.log('========================\n');
     
-    originalSend.call(this, data);
-  };
+//     originalSend.call(this, data);
+//   };
 
-  next();
-});
+//   next();
+// });
 
 // Middleware for parsing JSON and URL-encoded bodies
 app.use(express.json());
@@ -65,15 +65,15 @@ app.use(express.urlencoded({ extended: true }));
 // Database connection with detailed logging
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
-    console.log('\n=== Database Connection ===');
+    // console.log('\n=== Database Connection ===');
     console.log('Successfully connected to MongoDB');
-    console.log('Database URI:', process.env.MONGODB_URI.replace(/\/\/([^:]+):([^@]+)@/, '//[hidden]:[hidden]@'));
-    console.log('=========================\n');
+    // console.log('Database URI:', process.env.MONGODB_URI.replace(/\/\/([^:]+):([^@]+)@/, '//[hidden]:[hidden]@'));
+    // console.log('=========================\n');
   })
   .catch(err => {
-    console.error('\n=== Database Error ===');
+    // console.error('\n=== Database Error ===');
     console.error('MongoDB connection error:', err);
-    console.error('=====================\n');
+    // console.error('=====================\n');
   });
 
 // Routes with logging
@@ -101,8 +101,6 @@ app.use('/api/users', (req, res, next) => {
   next();
 }, userRoutes);
 
-console.log('Routes setup completed');
-console.log('=====================\n');
 
 // Error handling middleware with detailed logging
 app.use((err, req, res, next) => {

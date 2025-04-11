@@ -191,7 +191,7 @@ router.post('/seller/login', async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
-
+    console.log("coming here from login route")
     // Return success response
     res.json({
       message: 'Login successful',
@@ -203,6 +203,7 @@ router.post('/seller/login', async (req, res) => {
         role: user.role
       }
     });
+
 
   } catch (error) {
     console.error('Login error:', error);
