@@ -4,6 +4,20 @@ import { auth, checkRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Get seller's own properties (must be before /:id route)
+router.get('/seller', auth, checkRole(['seller']), async (req, res) => {
+  try {
+    const properties = await Property.find({ seller: req.user._id })
+      .populate('seller', 'name email phoneNumber')
+      .sort({ createdAt: -1 });
+
+    res.json(properties);
+  } catch (error) {
+    console.error('Error fetching seller properties:', error);
+    res.status(500).json({ message: 'Error fetching seller properties' });
+  }
+});
+
 // Get all properties (public)
 router.get('/', async (req, res) => {
   try {

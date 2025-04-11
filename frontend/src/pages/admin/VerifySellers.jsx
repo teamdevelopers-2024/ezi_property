@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowLeft, User, UserCheck, UserX } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../contexts/ToastContext';
 import { admin } from '../../services/api';
@@ -14,25 +14,29 @@ const VerifySellers = () => {
   // Fetch pending sellers
   const fetchPendingSellers = async () => {
     try {
-      const response = await admin.getSellerRegistrations();
-      setPendingSellers(response.filter(seller => seller.status === 'pending'));
+      console.log('[VerifySellers] Fetching pending sellers');
+      const sellers = await admin.getSellerRegistrations();
+      const pendingSellers = sellers.filter(s => s.registrationStatus === 'pending');
+      setPendingSellers(pendingSellers);
     } catch (error) {
-      console.error('Error fetching pending sellers:', error);
+      console.error('[VerifySellers] Error fetching pending sellers:', error);
       showToast('Failed to load pending seller registrations', 'error');
+      setPendingSellers([]);
     } finally {
       setIsLoading(false);
     }
   };
 
   // Handle seller approval/rejection
-  const handleSellerAction = async (sellerId, action, rejectionReason = '') => {
+  const handleSellerAction = async (sellerId, action) => {
     try {
-      await admin.updateSellerRegistration(sellerId, action, rejectionReason);
-      showToast(`Seller ${action === 'approve' ? 'approved' : 'rejected'} successfully`, 'success');
+      console.log(`[VerifySellers] ${action}ing seller ${sellerId}`);
+      await admin.updateSellerRegistration(sellerId, action);
+      showToast(`Seller ${action}ed successfully`, 'success');
       fetchPendingSellers(); // Refresh the list
     } catch (error) {
-      console.error('Error updating seller status:', error);
-      showToast('Failed to update seller status', 'error');
+      console.error(`[VerifySellers] Error ${action}ing seller:`, error);
+      showToast(`Failed to ${action} seller`, 'error');
     }
   };
 
@@ -64,35 +68,45 @@ const VerifySellers = () => {
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Verify Sellers</h1>
         
         {pendingSellers.length === 0 ? (
-          <p className="text-gray-500">No pending seller registrations at the moment.</p>
+          <div className="text-center py-12">
+            <UserCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg">No pending seller registrations at the moment.</p>
+          </div>
         ) : (
           <div className="space-y-4">
             {pendingSellers.map((seller) => (
               <motion.div
-                key={seller.id}
+                key={seller._id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                className="flex items-center justify-between p-6 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
               >
-                <div>
-                  <p className="font-medium text-gray-900">{seller.name}</p>
-                  <p className="text-sm text-gray-500">{seller.email}</p>
-                  {seller.phone && (
-                    <p className="text-sm text-gray-500">{seller.phone}</p>
-                  )}
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#F3703A] to-[#E35D2A] flex items-center justify-center text-white">
+                    <User className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{seller.name}</p>
+                    <p className="text-sm text-gray-500">{seller.email}</p>
+                    {seller.phoneNumber && (
+                      <p className="text-sm text-gray-500">{seller.phoneNumber}</p>
+                    )}
+                  </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <button
-                    onClick={() => handleSellerAction(seller.id, 'approve')}
-                    className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
+                    onClick={() => handleSellerAction(seller._id, 'approve')}
+                    className="flex items-center px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
                   >
-                    <CheckCircle className="w-6 h-6" />
+                    <CheckCircle className="w-5 h-5 mr-2" />
+                    Approve
                   </button>
                   <button
-                    onClick={() => handleSellerAction(seller.id, 'reject')}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                    onClick={() => handleSellerAction(seller._id, 'reject')}
+                    className="flex items-center px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
                   >
-                    <XCircle className="w-6 h-6" />
+                    <XCircle className="w-5 h-5 mr-2" />
+                    Reject
                   </button>
                 </div>
               </motion.div>

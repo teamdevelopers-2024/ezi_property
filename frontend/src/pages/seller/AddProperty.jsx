@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { Upload, MapPin, DollarSign, Home, BedDouble, Bath, Square, Plus, Trash2, ArrowLeft, Building2, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import api from '../../services/api';
+import { uploadImage, deleteImage } from '../../utils/cloudinary';
 
 const SellerAddProperty = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [images, setImages] = useState([]);
   const [formData, setFormData] = useState({
     title: '',
@@ -85,28 +87,46 @@ const SellerAddProperty = () => {
     }));
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length + images.length > 10) {
       showToast('You can only upload up to 10 images', 'error');
       return;
     }
 
-    const newImages = files.map(file => ({
-      file,
-      preview: URL.createObjectURL(file)
-    }));
+    setUploadingImages(true);
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const result = await uploadImage(file);
+        return {
+          url: result.url,
+          publicId: result.publicId,
+          preview: URL.createObjectURL(file)
+        };
+      });
 
-    setImages(prev => [...prev, ...newImages]);
+      const uploadedImages = await Promise.all(uploadPromises);
+      setImages(prev => [...prev, ...uploadedImages]);
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      showToast('Failed to upload images', 'error');
+    } finally {
+      setUploadingImages(false);
+    }
   };
 
-  const removeImage = (index) => {
-    setImages(prev => {
-      const newImages = [...prev];
-      URL.revokeObjectURL(newImages[index].preview);
-      newImages.splice(index, 1);
-      return newImages;
-    });
+  const removeImage = async (index) => {
+    try {
+      const imageToRemove = images[index];
+      if (imageToRemove.publicId) {
+        await deleteImage(imageToRemove.publicId);
+      }
+      setImages(prev => prev.filter((_, i) => i !== index));
+      showToast('Image removed successfully', 'success');
+    } catch (error) {
+      console.error('Error removing image:', error);
+      showToast('Failed to remove image', 'error');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -114,31 +134,22 @@ const SellerAddProperty = () => {
     setLoading(true);
 
     try {
-      const formDataToSend = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (key === 'location') {
-          formDataToSend.append(key, JSON.stringify(formData[key]));
-        } else if (key === 'amenities') {
-          formDataToSend.append(key, JSON.stringify(formData[key]));
-        } else {
-          formDataToSend.append(key, formData[key]);
-        }
+      // Prepare the images data for the API
+      const propertyImages = images.map(img => ({
+        url: img.url,
+        publicId: img.publicId
+      }));
+
+      const response = await api.post('/properties', {
+        ...formData,
+        images: propertyImages
       });
 
-      images.forEach((image, index) => {
-        formDataToSend.append('images', image.file);
-      });
-
-      await api.post('/seller/properties', formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      showToast('Property added successfully!', 'success');
+      showToast('Property added successfully', 'success');
       navigate('/seller/properties');
     } catch (error) {
-      showToast('Failed to add property', 'error');
+      console.error('Error adding property:', error);
+      showToast(error.response?.data?.message || 'Failed to add property', 'error');
     } finally {
       setLoading(false);
     }
@@ -427,51 +438,38 @@ const SellerAddProperty = () => {
             transition={{ duration: 0.5, delay: 0.6 }}
             className="bg-white rounded-xl shadow-sm p-6"
           >
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Property Images</h2>
             <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">Property Images</h2>
+                <label className="flex items-center px-4 py-2 bg-[#F3703A] text-white rounded-lg hover:bg-[#E35D2A] transition-colors cursor-pointer">
+                  <Upload className="w-5 h-5 mr-2" />
+                  {uploadingImages ? 'Uploading...' : 'Upload Images'}
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                    disabled={uploadingImages}
+                  />
+                </label>
+              </div>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {images.map((image, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    className="relative group"
-                  >
+                  <div key={index} className="relative group">
                     <img
                       src={image.preview}
                       alt={`Property ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg"
+                      className="w-full h-48 object-cover rounded-lg"
                     />
                     <button
-                      type="button"
                       onClick={() => removeImage(index)}
-                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
-                  </motion.div>
+                  </div>
                 ))}
-                {images.length < 10 && (
-                  <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#F3703A] transition-colors duration-200">
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <ImageIcon className="w-8 h-8 mb-2 text-gray-400" />
-                      <p className="mb-1 text-sm text-gray-500">
-                        <span className="font-semibold">Click to upload</span>
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        PNG, JPG or JPEG (MAX. {10 - images.length} images)
-                      </p>
-                    </div>
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImageChange}
-                    />
-                  </label>
-                )}
               </div>
             </div>
           </motion.div>
