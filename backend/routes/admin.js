@@ -40,7 +40,7 @@ router.get('/seller-registrations', auth, async (req, res) => {
       role: 'seller',
       registrationStatus: 'pending'
     }).select('-password');
-
+    console.log('[Route /seller-registrations] Pending registrations:', pendingRegistrations);
     res.json(pendingRegistrations);
   } catch (error) {
     console.error('Error fetching pending registrations:', error);
@@ -98,6 +98,80 @@ router.patch('/seller-registrations/:userId', auth, async (req, res) => {
     console.error('Error updating registration status:', error);
     res.status(500).json({ 
       message: 'Failed to update registration status',
+      error: error.message 
+    });
+  }
+});
+
+// Update user status
+router.patch('/users/:userId', auth, async (req, res) => {
+  try {
+    // Verify admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+
+    const { userId } = req.params;
+    const { status, isApproved } = req.body;
+
+    console.log('Updating user status:', { userId, status, isApproved });
+
+    if (!['active', 'suspended', 'pending'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status. Use "active", "suspended", or "pending".' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update user status
+    user.status = status;
+    if (isApproved !== undefined) {
+      user.isApproved = isApproved;
+    }
+
+    await user.save();
+
+    res.json({
+      message: 'User status updated successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        status: user.status,
+        isApproved: user.isApproved
+      }
+    });
+  } catch (error) {
+    console.error('Error updating user status:', error);
+    res.status(500).json({ 
+      message: 'Failed to update user status',
+      error: error.message 
+    });
+  }
+});
+
+// Delete user
+router.delete('/users/:userId', auth, async (req, res) => {
+  try {
+    // Verify admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+
+    const { userId } = req.params;
+    const user = await User.findByIdAndDelete(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ 
+      message: 'Failed to delete user',
       error: error.message 
     });
   }

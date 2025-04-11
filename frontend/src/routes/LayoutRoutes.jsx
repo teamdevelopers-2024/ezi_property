@@ -50,6 +50,7 @@ import Onboarding from "../pages/Onboarding";
 const ProtectedRoute = ({ children, roles }) => {
   const { user, loading } = useAuth();
   const token = localStorage.getItem('token');
+  console.log(user , "coming here from protected route")
 
   if (loading) {
     return <div>Loading...</div>;

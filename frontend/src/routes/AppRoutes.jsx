@@ -36,7 +36,7 @@ import Footer from '../components/common/Footer';
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, isLoading } = useAuth();
-
+  console.log(user , "coming here from protected route")
   if (isLoading) {
     return <div>Loading...</div>;
   }
