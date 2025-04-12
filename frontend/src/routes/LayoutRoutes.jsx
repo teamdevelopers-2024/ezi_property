@@ -1,6 +1,5 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import ErrorBoundary from "../components/ErrorBoundary";
 import { useAuth } from "../contexts/AuthContext";
 import AdminLayout from "../layouts/AdminLayout";
 
@@ -48,8 +47,10 @@ import Onboarding from "../pages/Onboarding";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, roles }) => {
-  const { user, loading } = useAuth();
+  const { loading } = useAuth();
   const token = localStorage.getItem('token');
+  let user = localStorage.getItem("user")
+  user = JSON.parse(user)
   console.log(user , "coming here from protected route")
 
   if (loading) {
@@ -73,14 +74,16 @@ const ProtectedRoute = ({ children, roles }) => {
 
   // For other routes, check user object as before
   if (!user) {
+    console.log(user,"coming here from protected route")
     // Only redirect if we're not already on a login page
     const isLoginPage = window.location.pathname === '/seller/login';
     if (!isLoginPage) {
+      console.log("coming here from protected route")
       return <Navigate to="/seller/login" replace />;
     }
     return null;
   }
-
+  console.log(roles,user,"this is roles here from protected route")
   if (roles && !roles.includes(user.role)) {
     return <Navigate to="/" replace />;
   }
@@ -90,112 +93,110 @@ const ProtectedRoute = ({ children, roles }) => {
 
 function LayoutRoutes() {
   return (
-    <ErrorBoundary>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Onboarding />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/property/:id" element={<PropertyDetails />} />
-        <Route path="/search" element={<SearchResults />} />
-        <Route path="/seller/:id" element={<SellerPublicView />} />
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<Onboarding />} />
+      <Route path="/home" element={<Home />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/property/:id" element={<PropertyDetails />} />
+      <Route path="/search" element={<SearchResults />} />
+      <Route path="/seller/:id" element={<SellerPublicView />} />
 
-        {/* Auth Routes */}
-        <Route path="/seller/login" element={<SellerLogin />} />
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/seller/register" element={<SellerRegister />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
+      {/* Auth Routes */}
+      <Route path="/seller/login" element={<SellerLogin />} />
+      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/seller/register" element={<SellerRegister />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* Admin Routes - Now nested under AdminLayout */}
-        <Route 
-            path="/admin" 
-            element={
-                <ProtectedRoute roles={["admin"]}>
-                    <AdminLayout />
-                </ProtectedRoute>
-            }
-        >
-            {/* Redirect /admin to /admin/dashboard */}
-            <Route index element={<Navigate to="dashboard" replace />} /> 
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="reports" element={<Reports />} />
-            <Route path="properties" element={<PropertyList />} />
-            <Route path="properties/add" element={<AddProperty />} />
-            <Route path="properties/edit/:id" element={<EditProperty />} />
-            <Route path="users" element={<AdminUsers />} />
-            <Route path="settings" element={<AdminSettings />} />
-            <Route path="featured-properties" element={<FeaturedProperties />} />
-            <Route path="seller-performance" element={<SellerPerformance />} />
-            <Route path="verify-sellers" element={<VerifySellers />} /> 
-            <Route path="properties/pending" element={<PendingProperties />} />
-            <Route path="profile" element={<AdminProfile />} /> 
-        </Route>
+      {/* Admin Routes - Now nested under AdminLayout */}
+      <Route 
+          path="/admin" 
+          element={
+              <ProtectedRoute roles={["admin"]}>
+                  <AdminLayout />
+              </ProtectedRoute>
+          }
+      >
+          {/* Redirect /admin to /admin/dashboard */}
+          <Route index element={<Navigate to="dashboard" replace />} /> 
+          <Route path="dashboard" element={<AdminDashboard />}/>
+          <Route path="reports" element={<Reports />} />
+          <Route path="properties" element={<PropertyList />} />
+          <Route path="properties/add" element={<AddProperty />} />
+          <Route path="properties/edit/:id" element={<EditProperty />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="settings" element={<AdminSettings />} />
+          <Route path="featured-properties" element={<FeaturedProperties />} />
+          <Route path="seller-performance" element={<SellerPerformance />} />
+          <Route path="verify-sellers" element={<VerifySellers />} /> 
+          <Route path="properties/pending" element={<PendingProperties />} />
+          <Route path="profile" element={<AdminProfile />} /> 
+      </Route>
 
-        {/* Seller Routes */}
-        <Route
-          path="/seller/dashboard"
-          element={
-            <ProtectedRoute roles={["seller"]}>
-              <SellerDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/seller/properties"
-          element={
-            <ProtectedRoute roles={["seller"]}>
-              <SellerProperties />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/seller/properties/add"
-          element={
-            <ProtectedRoute roles={["seller"]}>
-              <SellerAddProperty />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/seller/manage-properties"
-          element={
-            <ProtectedRoute roles={["seller"]}>
-              <SellerManageProperties />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/seller/profile"
-          element={
-            <ProtectedRoute roles={["seller"]}>
-              <SellerProfile />
-            </ProtectedRoute>
-          }
-        />
+      {/* Seller Routes */}
+      <Route
+        path="/seller/dashboard"
+        element={
+          <ProtectedRoute roles={["seller"]}>
+            <SellerDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/seller/properties"
+        element={
+          <ProtectedRoute roles={["seller"]}>
+            <SellerProperties />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/seller/properties/add"
+        element={
+          <ProtectedRoute roles={["seller"]}>
+            <SellerAddProperty />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/seller/manage-properties"
+        element={
+          <ProtectedRoute roles={["seller"]}>
+            <SellerManageProperties />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/seller/profile"
+        element={
+          <ProtectedRoute roles={["seller"]}>
+            <SellerProfile />
+          </ProtectedRoute>
+        }
+      />
 
-        {/* Buyer Routes */}
-        <Route
-          path="/saved-properties"
-          element={
-            <ProtectedRoute roles={["buyer"]}>
-              <SavedProperties />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute roles={["buyer"]}>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
+      {/* Buyer Routes */}
+      <Route
+        path="/saved-properties"
+        element={
+          <ProtectedRoute roles={["buyer"]}>
+            <SavedProperties />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute roles={["buyer"]}>
+            <Profile />
+          </ProtectedRoute>
+        }
+      />
 
-        {/* 404 Route */}
-        <Route path="/404" element={<NotFound />} />
-        <Route path="*" element={<Navigate to="/404" replace />} />
-      </Routes>
-    </ErrorBoundary>
+      {/* 404 Route */}
+      <Route path="/404" element={<NotFound />} />
+      <Route path="*" element={<Navigate to="/404" replace />} />
+    </Routes>
   );
 }
 

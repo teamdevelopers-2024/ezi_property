@@ -107,7 +107,11 @@ export const AuthProvider = ({ children }) => {
         // Store the authentication data
         localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
-        setUser(response.user);
+        console.log(response.user,"this is response.user here from login")
+        setTimeout(()=>{
+          setUser(response.user);
+        },5000)
+         console.log("this is user here from login",user)
         api.defaults.headers.common['Authorization'] = `Bearer ${response.token}`;
         return { success: true };
       }

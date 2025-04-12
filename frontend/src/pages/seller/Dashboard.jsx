@@ -34,7 +34,7 @@ import whiteLogo from '../../assets/images/white_logo_with_text.png';
 import { toast, Toaster } from 'react-hot-toast';
 
 const SellerDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
@@ -133,14 +133,21 @@ const SellerDashboard = () => {
   ]);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (!isLoading) {
+      if (!user) {
+        navigate('/seller/login');
+      } else {
+        console.log("coming here else case",user)
+        fetchDashboardData();
+      }
+    }
+  }, [isLoading, user, navigate]);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
       // Fetch seller's properties using the correct endpoint
-      const propertiesResponse = await api.get(`/users/${user._id}/properties`);
+      const propertiesResponse = await api.get('/properties/seller');
       const properties = propertiesResponse.data;
 
       // Set all properties
@@ -990,6 +997,20 @@ const SellerDashboard = () => {
     }
   };
 
+  // Show loading state while auth is being checked
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
+  // If not loading but no user, redirect to login
+  if (!user) {
+    return null; // The useEffect will handle the navigation
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Toaster 
@@ -1067,15 +1088,14 @@ const SellerDashboard = () => {
           </Link>
 
           {/* User Info */}
-          <div className="p-6 bg-orange-200
-          ">
+          <div className="p-6 bg-orange-200">
             <div className="flex items-center space-x-4">
               <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#F3703A] to-[#E35D2A] flex items-center justify-center text-white text-2xl font-semibold shadow-lg">
-                {user.name.charAt(0)}
+                {user?.name?.charAt(0) || '?'}
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">{user.name}</h3>
-                <p className="text-sm text-gray-500">{user.email}</p>
+                <h3 className="font-semibold text-gray-900">{user?.name || 'Loading...'}</h3>
+                <p className="text-sm text-gray-500">{user?.email || 'Loading...'}</p>
               </div>
             </div>
           </div>
