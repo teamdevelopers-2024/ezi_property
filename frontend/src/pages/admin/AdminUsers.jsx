@@ -249,12 +249,10 @@ const AdminUsers = () => {
                       <select
                         value={seller.status}
                         onChange={(e) => handleStatusChange(seller._id, e.target.value)}
-                        className="px-2 py-1 text-xs font-semibold rounded-full focus:outline-none focus:ring-2 focus:ring-[#F3703A]"
-                        style={{ backgroundColor: getStatusColor(seller.status).split(' ')[0] }}
+                        className="w-full p-2 border rounded"
                       >
                         <option value="active">Active</option>
                         <option value="suspended">Suspended</option>
-                        <option value="pending">Pending</option>
                       </select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

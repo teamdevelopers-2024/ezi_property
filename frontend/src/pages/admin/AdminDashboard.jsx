@@ -136,9 +136,7 @@ const AdminDashboard = () => {
         properties.getAll(),
         properties.getPending(),
         admin.getSellerRegistrations(), // This gets all sellers
-        admin.getSellerRegistrations().then(sellers => 
-          sellers.filter(s => s.registrationStatus === 'pending')
-        )
+        admin.getSellerRegistrations() // This already returns pending sellers
       ]);
 
       // Update stats with real data
@@ -160,8 +158,7 @@ const AdminDashboard = () => {
     try {
       console.log('[AdminDashboard] Fetching pending sellers');
       const sellers = await admin.getSellerRegistrations();
-      const pendingSellers = sellers.filter(s => s.registrationStatus === 'pending');
-      setPendingSellersData(pendingSellers);
+      setPendingSellersData(sellers);
     } catch (error) {
       console.error('[AdminDashboard] Error fetching pending sellers:', error);
       showToast('Failed to load pending seller registrations', 'error');

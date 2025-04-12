@@ -38,8 +38,8 @@ const userSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'suspended', 'pending'],
-    default: 'pending'
+    enum: ['active', 'suspended'],
+    default: 'active'
   },
   rejectionReason: {
     type: String,

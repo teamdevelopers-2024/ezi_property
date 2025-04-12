@@ -116,8 +116,8 @@ router.patch('/users/:userId', auth, async (req, res) => {
 
     console.log('Updating user status:', { userId, status, isApproved });
 
-    if (!['active', 'suspended', 'pending'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status. Use "active", "suspended", or "pending".' });
+    if (!['active', 'suspended'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status. Use "active" or "suspended".' });
     }
 
     const user = await User.findById(userId);
